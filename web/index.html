@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Juno Second Screen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Juno">
+<meta name="theme-color" content="#070b12">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="ident">
+    <span id="craftName" class="craft">—</span>
+    <span id="planetName" class="planet">—</span>
+  </div>
+  <div class="clocks">
+    <div class="clock"><label>MET</label><span id="met">T+00:00:00</span></div>
+    <div class="clock"><label>WARP</label><span id="warp">1x</span></div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="flight" class="active">Flight</button>
+    <button data-tab="orbit">Orbit</button>
+    <button data-tab="view">View</button>
+  </nav>
+  <div class="link">
+    <span id="rate" class="latency" title="Telemetry frames per second">—</span>
+    <span id="conn" class="dot" title="Connection"></span>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ---------------------------------------------------------------- Flight -->
+  <section class="panel-group" data-panel="flight">
+    <div class="panel navpanel">
+      <canvas id="navball" width="440" height="440"></canvas>
+      <div class="attitude">
+        <div class="pair"><label>PITCH</label><span id="atPitch">0°</span></div>
+        <div class="pair"><label>HDG</label><span id="atHeading">0°</span></div>
+        <div class="pair"><label>ROLL</label><span id="atRoll">0°</span></div>
+        <div class="pair"><label>AoA</label><span id="atAoa">0°</span></div>
+      </div>
+      <div class="navmodes">
+        <button class="chip" data-lock="prograde">PRO</button>
+        <button class="chip" data-lock="retrograde">RETRO</button>
+        <button class="chip" data-lock="target">TGT</button>
+        <button class="chip" data-lock="node">NODE</button>
+        <button class="chip" data-lock="none">FREE</button>
+      </div>
+    </div>
+
+    <div class="panel readouts">
+      <div class="bignum">
+        <label>ALTITUDE ASL</label>
+        <span id="altAsl">—</span>
+      </div>
+      <div class="bignum">
+        <label>SURFACE SPEED</label>
+        <span id="surfaceSpeed">—</span>
+      </div>
+      <div class="grid2">
+        <div class="pair"><label>ALT AGL</label><span id="altAgl">—</span></div>
+        <div class="pair"><label>ORBITAL SPD</label><span id="orbitalSpeed">—</span></div>
+        <div class="pair"><label>VERT SPD</label><span id="verticalSpeed">—</span></div>
+        <div class="pair"><label>HORIZ SPD</label><span id="horizontalSpeed">—</span></div>
+        <div class="pair"><label>G-FORCE</label><span id="gforce">—</span></div>
+        <div class="pair"><label>MACH</label><span id="mach">—</span></div>
+        <div class="pair"><label>APOAPSIS</label><span id="apoapsisBrief">—</span></div>
+        <div class="pair"><label>PERIAPSIS</label><span id="periapsisBrief">—</span></div>
+        <div class="pair"><label>T&nbsp;TO&nbsp;AP</label><span id="timeToApBrief">—</span></div>
+        <div class="pair"><label>T&nbsp;TO&nbsp;PE</label><span id="timeToPeBrief">—</span></div>
+      </div>
+      <div class="bars">
+        <div class="bar"><label>FUEL (STAGE)</label><div class="track"><i id="barFuel"></i></div><span id="valFuel">—</span></div>
+        <div class="bar"><label>MONOPROP</label><div class="track"><i id="barMono"></i></div><span id="valMono">—</span></div>
+        <div class="bar"><label>BATTERY</label><div class="track"><i id="barBatt"></i></div><span id="valBatt">—</span></div>
+      </div>
+    </div>
+
+    <div class="panel perf">
+      <div class="grid2">
+        <div class="pair"><label>TWR</label><span id="twr">—</span></div>
+        <div class="pair"><label>&Delta;V STAGE</label><span id="deltaV">—</span></div>
+        <div class="pair"><label>THRUST</label><span id="thrust">—</span></div>
+        <div class="pair"><label>MASS</label><span id="mass">—</span></div>
+        <div class="pair"><label>ISP</label><span id="isp">—</span></div>
+        <div class="pair"><label>BURN LEFT</label><span id="burnTime">—</span></div>
+        <div class="pair"><label>ENGINES</label><span id="engines">—</span></div>
+        <div class="pair"><label>STAGE</label><span id="stage">—</span></div>
+      </div>
+      <div class="grid2">
+        <div class="pair"><label>AIR PRESS</label><span id="airPressure">—</span></div>
+        <div class="pair"><label>AIR DENS</label><span id="airDensity">—</span></div>
+        <div class="pair"><label>LATITUDE</label><span id="lat">—</span></div>
+        <div class="pair"><label>LONGITUDE</label><span id="lon">—</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- Orbit -->
+  <section class="panel-group" data-panel="orbit" hidden>
+    <div class="panel orbitplot">
+      <canvas id="orbitCanvas" width="620" height="620"></canvas>
+    </div>
+    <div class="panel readouts">
+      <div class="bignum"><label>APOAPSIS</label><span id="apoapsis">—</span></div>
+      <div class="bignum"><label>PERIAPSIS</label><span id="periapsis">—</span></div>
+      <div class="grid2">
+        <div class="pair"><label>T&nbsp;TO&nbsp;AP</label><span id="timeToAp">—</span></div>
+        <div class="pair"><label>T&nbsp;TO&nbsp;PE</label><span id="timeToPe">—</span></div>
+        <div class="pair"><label>ECCENTRICITY</label><span id="ecc">—</span></div>
+        <div class="pair"><label>INCLINATION</label><span id="inc">—</span></div>
+        <div class="pair"><label>PERIOD</label><span id="period">—</span></div>
+        <div class="pair"><label>BODY</label><span id="orbitBody">—</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------ View -->
+  <section class="panel-group" data-panel="view" hidden>
+    <div class="panel viewpanel">
+      <img id="videoFeed" alt="">
+      <div class="viewhint" id="viewHint">Video feed off</div>
+      <div class="viewbar">
+        <button id="videoToggle" class="chip">Start feed</button>
+        <span class="note" id="videoNote"></span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- --------------------------------------------------------------- Controls -->
+<footer class="controls" id="controls">
+  <div class="throttle">
+    <label>THROTTLE</label>
+    <div class="tslider" id="throttleSlider">
+      <i id="throttleFill"></i>
+      <span id="throttleValue">0%</span>
+    </div>
+  </div>
+
+  <div class="ctrlmid">
+    <div class="agrow" id="groupRow"></div>
+    <div class="miscrow">
+      <button class="chip" data-cmd="warpDown">&laquo; WARP</button>
+      <button class="chip" data-cmd="warpUp">WARP &raquo;</button>
+      <button class="chip" data-cmd="pause">PAUSE</button>
+      <button class="chip toggle" data-cmd="translation">RCS TRANSLATE</button>
+      <button class="chip" data-cmd="brake">BRAKE</button>
+    </div>
+  </div>
+
+  <div class="stagewrap">
+    <button id="stageButton" class="stage">STAGE</button>
+  </div>
+</footer>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
