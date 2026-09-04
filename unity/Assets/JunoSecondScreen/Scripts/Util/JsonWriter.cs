@@ -106,6 +106,15 @@ namespace JunoSecondScreen.Util
             _builder.Append("null");
         }
 
+        /// <summary>
+        /// Writes a single string as the next element of the current array scope.
+        /// </summary>
+        public void Value(string value)
+        {
+            Separate();
+            WriteString(value);
+        }
+
         public override string ToString()
         {
             return _builder.ToString();

@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _assemblies:
   - JunoSecondScreen.dll
-  _author: Tim Numan
-  _description: Turns an iPad (or any tablet) into a second screen for Juno - a touch
-    flight console with navball, gauges, orbit plot, staging and an optional live view
-    of the game window, served straight from the game over your local network.
+  _author: Dooiereier
+  _description: 'Use a browser on a phone, Ipad or laptop as a second screen to interact
+    with the game. Use case: switch off UI on the game and have pretty outside views
+    while staging or selecting AGs on an Ipad or laptop.
+
+
+    <color=red><size=150%>Harmony
+    required!'
   _loadPriority: 1000
   _name: Second Screen
   _otherAssets: []
@@ -29,7 +33,7 @@ MonoBehaviour:
   _steamTitle: 
   _steamVisibility: 0
   _versionMajor: 0
-  _versionMinor: 1
+  _versionMinor: 8
   _partCategories: []
   _parts: []
   _partStyleExtensions: []

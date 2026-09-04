@@ -143,9 +143,11 @@ namespace JunoSecondScreen.Net
                     return;
                 }
 
-                if (Interlocked.Increment(ref _connectionCount) > MaxConcurrentConnections)
+                int count = Interlocked.Increment(ref _connectionCount);
+                if (count > MaxConcurrentConnections)
                 {
                     Interlocked.Decrement(ref _connectionCount);
+                    Log.Warn($"[Vizzy conn diag] rejected a connection: already at the {MaxConcurrentConnections}-connection cap.");
                     try
                     {
                         client.Close();
@@ -155,6 +157,15 @@ namespace JunoSecondScreen.Net
                     }
 
                     continue;
+                }
+
+                if (count >= MaxConcurrentConnections - 4)
+                {
+                    // Getting close to the cap is worth knowing about even
+                    // before a connection actually gets rejected - e.g. to
+                    // catch a slow buildup of connections the client thinks
+                    // it already abandoned.
+                    Log.Info($"[Vizzy conn diag] accepted connection, count={count}/{MaxConcurrentConnections}");
                 }
 
                 lock (_clients)

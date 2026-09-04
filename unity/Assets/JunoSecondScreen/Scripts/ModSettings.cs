@@ -76,7 +76,7 @@ namespace JunoSecondScreen
         {
             this.Enabled = this.CreateBool("Enabled")
                 .SetDescription("Serve the tablet console over your local network. The address is written to the log and shown when a flight starts.")
-                .SetDefault(true);
+                .SetDefault(false);
 
             this.Port = this.CreateNumeric<float>("Port", 1024f, 65535f, 1f)
                 .SetDescription("The TCP port the console is served on. Change it if another program already uses this port.")
@@ -103,7 +103,7 @@ namespace JunoSecondScreen
             this.VideoWidth = this.CreateNumeric<float>("Video width", 320f, 1280f, 32f)
                 .SetDescription("Width in pixels that video frames are scaled down to before being sent.")
                 .SetDisplayFormatter(value => FormatInteger(value) + " px")
-                .SetDefault(640f);
+                .SetDefault(1280f);
 
             this.VideoFps = this.CreateNumeric<float>("Video frame rate", 1f, 30f, 1f)
                 .SetDescription("Frames per second for the video feed.")

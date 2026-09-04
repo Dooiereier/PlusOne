@@ -1,5 +1,6 @@
 namespace JunoSecondScreen.Flight
 {
+    using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using JunoSecondScreen.Util;
@@ -60,9 +61,18 @@ namespace JunoSecondScreen.Flight
 
             while (_queue.TryDequeue(out Dictionary<string, object> command))
             {
-                if (ControlEnabled)
+                if (!ControlEnabled)
+                {
+                    continue;
+                }
+
+                try
                 {
                     Execute(command, craft);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn($"Command '{JsonReader.GetString(command, "cmd")}' failed: {ex.Message}");
                 }
             }
 
@@ -128,6 +138,18 @@ namespace JunoSecondScreen.Flight
 
                 case "lock":
                     SetHeadingLock(JsonReader.GetString(command, "mode"));
+                    break;
+
+                case "mfdClick":
+                    Canvas mfdCanvas = MfdCollector.FindCanvas(JsonReader.GetString(command, "part"), craft);
+                    if (mfdCanvas != null)
+                    {
+                        MfdInputBridge.Click(
+                            mfdCanvas,
+                            (float)JsonReader.GetDouble(command, "u"),
+                            (float)JsonReader.GetDouble(command, "v"));
+                    }
+
                     break;
             }
         }

@@ -87,6 +87,7 @@ body {
 }
 .panel-group[data-panel="orbit"] { grid-template-columns: 1.2fr 1fr; }
 .panel-group[data-panel="view"] { grid-template-columns: 1fr; }
+.panel-group[data-panel="mfd"] { grid-template-columns: 150px 1fr; }
 .panel-group[hidden] { display: none; }
 
 .panel {
@@ -130,7 +131,7 @@ body {
 /* ------------------------------------------------------------- orbit plot -- */
 
 .orbitplot { align-items: center; justify-content: center; }
-#orbitCanvas { width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; }
+#orbitCanvas { width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; object-fit: contain; }
 
 /* ------------------------------------------------------------------ video -- */
 
@@ -139,21 +140,69 @@ body {
 #videoFeed.on { display: block; }
 .viewhint { position: absolute; color: var(--muted); font-size: 14px; }
 .viewbar { position: absolute; bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.viewbar select {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
 .viewbar .note { font-size: 11px; color: var(--muted); }
+
+.signallost {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 11, 18, 0.55);
+  color: #ff5c4d;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .8);
+  animation: signallost-blink 1.2s step-start infinite;
+  pointer-events: none;
+}
+.signallost[hidden] { display: none; }
+@keyframes signallost-blink {
+  50% { opacity: .35; }
+}
 
 /* --------------------------------------------------------------- controls -- */
 
 .controls {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 150px 1fr 190px;
+  grid-template-columns: 100px 1fr 160px;
   gap: var(--pad);
   padding: var(--pad);
   padding-top: 0;
   align-items: stretch;
-  height: 172px;
+  height: 128px;
 }
 .controls.locked { opacity: .45; pointer-events: none; }
+
+/* On the MFD/Cameras tabs the screen wants the room more than the controls
+   do - shrink the bar and stop stretching it edge-to-edge so the panel above
+   gets both the reclaimed height and doesn't feel squeezed sideways by it. */
+.controls.compact {
+  align-self: center;
+  width: 55%;
+  height: 75px;
+  grid-template-columns: 64px 1fr 90px;
+  gap: 8px;
+  padding: 8px;
+  padding-top: 0;
+}
+.controls.compact .throttle > label { font-size: 7px; }
+.controls.compact .tslider span { font-size: 15px; }
+.controls.compact .ag b { font-size: 13px; }
+.controls.compact .ag em { font-size: 7px; }
+.controls.compact .chip { font-size: 9px; padding: 4px 6px; }
+.controls.compact .stage { font-size: 14px; border-width: 1px; border-radius: 10px; }
 
 .throttle { display: flex; flex-direction: column; gap: 6px; }
 .throttle > label { font-size: 9px; color: var(--muted); letter-spacing: .14em; }
@@ -184,10 +233,10 @@ body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, .75);
 }
 
-.ctrlmid { display: flex; flex-direction: column; gap: var(--pad); min-width: 0; }
+.ctrlmid { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .agrow { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; flex: 1; }
-.miscrow { display: flex; gap: 6px; flex: 0 0 44px; }
-.miscrow .chip { flex: 1; }
+.miscrow { display: flex; gap: 6px; flex: 0 0 34px; }
+.miscrow .chip { flex: 1; padding: 6px 10px; }
 
 .ag {
   appearance: none;
@@ -195,7 +244,7 @@ body {
   background: var(--panel);
   color: var(--muted);
   border-radius: 10px;
-  padding: 4px;
+  padding: 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -232,7 +281,7 @@ body {
   border-radius: 14px;
   background: linear-gradient(180deg, #2a1d08, #1a1206);
   color: var(--warn);
-  font-size: 30px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: .18em;
   touch-action: manipulation;
@@ -255,6 +304,63 @@ body {
   z-index: 20;
 }
 
+/* ------------------------------------------------------------------- mfd -- */
+
+.mfdpanel { gap: 8px; padding: 8px; }
+.mfdlist {
+  gap: 6px;
+  overflow-y: auto;
+  padding: 8px 6px;
+}
+.mfdlist button {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: 8px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  cursor: pointer;
+}
+.mfdlist button.active {
+  background: #1c3a4a;
+  border-color: #2f6f8f;
+  color: var(--text);
+}
+.mfdlist .mfdlistempty { color: var(--muted); font-size: 12px; text-align: center; margin-top: 12px; }
+.mfdscreen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+#mfdFeed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+  display: none;
+}
+#mfdFeed.on { display: block; }
+.mfdempty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
 /* ------------------------------------------------------ narrow / portrait -- */
 
 /* Two columns on a portrait tablet, one on a phone. Panels flow and the group
@@ -265,15 +371,15 @@ body {
   .panel-group[data-panel="flight"] .perf { grid-column: 1 / -1; }
   .panel-group[data-panel="flight"] .perf .grid2 { grid-template-columns: repeat(4, 1fr); }
   .clocks { display: none; }
-  .controls { grid-template-columns: 120px 1fr 150px; height: 158px; }
+  .controls { grid-template-columns: 85px 1fr 130px; height: 118px; }
   .agrow { grid-template-columns: repeat(5, 1fr); }
-  .stage { font-size: 24px; }
+  .stage { font-size: 20px; }
 }
 
 @media (max-width: 700px) {
   .panel-group,
   .panel-group[data-panel="orbit"] { grid-template-columns: 1fr; }
   .panel-group[data-panel="flight"] .perf .grid2 { grid-template-columns: 1fr 1fr; }
-  .controls { grid-template-columns: 96px 1fr 120px; height: 150px; }
-  .stage { font-size: 20px; }
+  .controls { grid-template-columns: 70px 1fr 105px; height: 110px; }
+  .stage { font-size: 17px; }
 }

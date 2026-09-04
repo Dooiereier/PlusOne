@@ -21,13 +21,13 @@
     <span id="planetName" class="planet">—</span>
   </div>
   <div class="clocks">
-    <div class="clock"><label>MET</label><span id="met">T+00:00:00</span></div>
-    <div class="clock"><label>WARP</label><span id="warp">1x</span></div>
+    <div class="clock"><label>TIME</label><span id="met">00:00:00</span></div>
   </div>
   <nav class="tabs" id="tabs">
     <button data-tab="flight" class="active">Flight</button>
     <button data-tab="orbit">Orbit</button>
-    <button data-tab="view">View</button>
+    <button data-tab="mfd">MFD</button>
+    <button data-tab="view">Cameras</button>
   </nav>
   <div class="link">
     <span id="rate" class="latency" title="Telemetry frames per second">—</span>
@@ -98,6 +98,7 @@
       <div class="grid2">
         <div class="pair"><label>AIR PRESS</label><span id="airPressure">—</span></div>
         <div class="pair"><label>AIR DENS</label><span id="airDensity">—</span></div>
+        <div class="pair"><label>DYN PRESS</label><span id="dynPressure">—</span></div>
         <div class="pair"><label>LATITUDE</label><span id="lat">—</span></div>
         <div class="pair"><label>LONGITUDE</label><span id="lon">—</span></div>
       </div>
@@ -123,13 +124,29 @@
     </div>
   </section>
 
+  <!-- ------------------------------------------------------------------- MFD -->
+  <section class="panel-group" data-panel="mfd" hidden>
+    <div class="panel mfdlist" id="mfdList"></div>
+    <div class="panel mfdpanel">
+      <div class="mfdscreen" id="mfdScreen">
+        <img id="mfdFeed" alt="">
+        <div class="mfdempty" id="mfdEmpty">No MFD found on this craft</div>
+        <div class="signallost" id="mfdSignalLost" hidden>LOSS OF SIGNAL</div>
+      </div>
+    </div>
+  </section>
+
   <!-- ------------------------------------------------------------------ View -->
   <section class="panel-group" data-panel="view" hidden>
     <div class="panel viewpanel">
       <img id="videoFeed" alt="">
       <div class="viewhint" id="viewHint">Video feed off</div>
+      <div class="signallost" id="viewSignalLost" hidden>LOSS OF SIGNAL</div>
       <div class="viewbar">
         <button id="videoToggle" class="chip">Start feed</button>
+        <select id="viewCameraSelect">
+          <option value="">Main view</option>
+        </select>
         <span class="note" id="videoNote"></span>
       </div>
     </div>
@@ -150,9 +167,6 @@
   <div class="ctrlmid">
     <div class="agrow" id="groupRow"></div>
     <div class="miscrow">
-      <button class="chip" data-cmd="warpDown">&laquo; WARP</button>
-      <button class="chip" data-cmd="warpUp">WARP &raquo;</button>
-      <button class="chip" data-cmd="pause">PAUSE</button>
       <button class="chip toggle" data-cmd="translation">RCS TRANSLATE</button>
       <button class="chip" data-cmd="brake">BRAKE</button>
     </div>

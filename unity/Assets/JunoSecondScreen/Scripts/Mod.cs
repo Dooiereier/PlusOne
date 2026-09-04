@@ -11,6 +11,7 @@ namespace JunoSecondScreen
     public class Mod : GameMod
     {
         private GameObject _serviceObject;
+        private HarmonyLib.Harmony _harmony;
 
         private Mod()
             : base()
@@ -35,6 +36,9 @@ namespace JunoSecondScreen
             _serviceObject = new GameObject("Second Screen Service");
             Object.DontDestroyOnLoad(_serviceObject);
             _serviceObject.AddComponent<SecondScreenService>();
+
+            _harmony = new HarmonyLib.Harmony("com.dooiereier.junosecondscreen");
+            _harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 
             Log.Info("Second Screen mod initialized.");
         }

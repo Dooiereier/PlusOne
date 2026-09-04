@@ -39,7 +39,43 @@ namespace JunoSecondScreen.Net
         /// </summary>
         public bool HasTakenOverConnection { get; private set; }
 
-        public bool IsConnected => _client.Connected;
+        /// <summary>
+        /// Gets a value indicating whether the connection is still actually
+        /// alive.
+        /// </summary>
+        /// <remarks>
+        /// TcpClient.Connected alone is not reliable here: per its own
+        /// documentation, it only reflects the outcome of the *last* I/O
+        /// operation, not the socket's current state - it does not notice a
+        /// remote end that has since gracefully hung up (e.g. a browser
+        /// dropping an MJPEG &lt;img&gt; request after switching to a
+        /// different one) until a write eventually fails or times out, which
+        /// can take a long time if the send buffer still has room. A long-
+        /// lived MJPEG connection checks this every loop iteration, so a slow
+        /// leak here means old, abandoned connections pile up. Polling for a
+        /// pending read that would return zero bytes is the standard way to
+        /// detect that close promptly instead.
+        /// </remarks>
+        public bool IsConnected
+        {
+            get
+            {
+                try
+                {
+                    Socket socket = _client.Client;
+                    bool readable = socket.Poll(0, SelectMode.SelectRead);
+                    return _client.Connected && !(readable && socket.Available == 0);
+                }
+                catch (SocketException)
+                {
+                    return false;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return false;
+                }
+            }
+        }
 
         /// <summary>
         /// Sends a complete response.
