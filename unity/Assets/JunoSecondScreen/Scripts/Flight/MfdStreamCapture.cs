@@ -221,6 +221,31 @@ namespace JunoSecondScreen.Flight
         {
             while (!_disposed)
             {
+                // See ViewCapture.CaptureLoop for why this is conditional:
+                // WaitForEndOfFrame's render-pipeline sync point isn't worth
+                // paying for every frame the mod is merely enabled - only
+                // while someone's actually watching this MFD.
+                if (!HasSubscribers)
+                {
+                    // Guarded for the same reason as the try block below - an
+                    // unhandled exception here would permanently kill this
+                    // coroutine (a throwing coroutine never resumes), and
+                    // this branch runs every idle frame for the entire time
+                    // the mod is enabled, not just while watched.
+                    try
+                    {
+                        ApplyPendingTarget();
+                        MfdVisibilityOverride.ActiveCanvas = null;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warn($"MFD idle tick failed: {ex.Message}");
+                    }
+
+                    yield return null;
+                    continue;
+                }
+
                 yield return _endOfFrame;
 
                 // The whole per-tick body is guarded, not just CaptureFrame():

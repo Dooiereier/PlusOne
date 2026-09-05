@@ -36,6 +36,13 @@ namespace JunoSecondScreen.Flight
         public bool ControlEnabled { get; set; } = true;
 
         /// <summary>
+        /// Time.unscaledTime of the most recent "mfdClick" command, so
+        /// SecondScreenService.PublishMfd can hold off its widget-tree walk
+        /// for a short cooldown afterward - see that command's own comment.
+        /// </summary>
+        public float LastMfdClickAt { get; private set; } = float.NegativeInfinity;
+
+        /// <summary>
         /// Parses and queues a command message. Called from a network thread.
         /// </summary>
         /// <param name="json">The raw message from the console.</param>
@@ -150,6 +157,15 @@ namespace JunoSecondScreen.Flight
                             (float)JsonReader.GetDouble(command, "v"));
                     }
 
+                    // A click can make the MFD switch pages, which rebuilds
+                    // (destroys/recreates) some of its widget GameObjects -
+                    // not necessarily finished within this same Update() call.
+                    // MfdCollector's widget-tree walk reading a widget that's
+                    // mid-destroy on the very same frame was found to corrupt
+                    // that canvas's rendering (a black MFD screen) - see
+                    // SecondScreenService.PublishMfd, which holds off that
+                    // walk for a short cooldown after LastMfdClickAt.
+                    LastMfdClickAt = Time.unscaledTime;
                     break;
             }
         }

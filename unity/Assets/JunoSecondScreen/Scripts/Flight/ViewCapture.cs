@@ -110,11 +110,27 @@ namespace JunoSecondScreen.Flight
         {
             while (!_disposed)
             {
+                // WaitForEndOfFrame forces a sync point with the render
+                // pipeline, which costs real frame time even when nothing
+                // runs after it resumes - not worth paying every single
+                // frame for the entire time the mod is merely enabled, with
+                // or without anyone ever connecting. Idle frames use a plain
+                // yield return null instead (a normal per-frame check, no
+                // render-pipeline synchronization); only once someone is
+                // actually watching does this switch to WaitForEndOfFrame,
+                // which a real screenshot capture does need (it must run
+                // after this frame has finished rendering).
+                if (!HasSubscribers)
+                {
+                    ReleaseTextures();
+                    yield return null;
+                    continue;
+                }
+
                 yield return _endOfFrame;
 
                 if (!HasSubscribers)
                 {
-                    ReleaseTextures();
                     continue;
                 }
 

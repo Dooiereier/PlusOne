@@ -171,6 +171,25 @@ namespace JunoSecondScreen.Flight
         {
             while (!_disposed)
             {
+                // See ViewCapture.CaptureLoop for why this is conditional:
+                // WaitForEndOfFrame's render-pipeline sync point isn't worth
+                // paying for every frame the mod is merely enabled - only
+                // while someone's actually watching this feed.
+                if (!HasSubscribers)
+                {
+                    try
+                    {
+                        ApplyPendingTarget();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warn($"External camera idle tick failed: {ex.Message}");
+                    }
+
+                    yield return null;
+                    continue;
+                }
+
                 yield return _endOfFrame;
 
                 // The whole per-tick body is guarded, not just CaptureFrame():

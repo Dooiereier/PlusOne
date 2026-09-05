@@ -49,7 +49,7 @@ namespace JunoSecondScreen.Web
 <html lang=""en"">
 <head>
 <meta charset=""utf-8"">
-<title>Juno Second Screen</title>
+<title>Juno Tether</title>
 <meta name=""viewport"" content=""width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"">
 <meta name=""apple-mobile-web-app-capable"" content=""yes"">
 <meta name=""apple-mobile-web-app-status-bar-style"" content=""black-translucent"">
@@ -83,16 +83,18 @@ namespace JunoSecondScreen.Web
 </header>
 
 <main id=""main"">
+  <div class=""signallost globalsignal"" id=""globalSignalLost"" hidden>LOSS OF SIGNAL</div>
 
   <!-- ---------------------------------------------------------------- Flight -->
   <section class=""panel-group"" data-panel=""flight"">
     <div class=""panel navpanel"">
-      <canvas id=""navball"" width=""440"" height=""440""></canvas>
-      <div class=""attitude"">
-        <div class=""pair""><label>PITCH</label><span id=""atPitch"">0°</span></div>
-        <div class=""pair""><label>HDG</label><span id=""atHeading"">0°</span></div>
-        <div class=""pair""><label>ROLL</label><span id=""atRoll"">0°</span></div>
-        <div class=""pair""><label>AoA</label><span id=""atAoa"">0°</span></div>
+      <div class=""pair navroll""><label>ROLL</label><span id=""atRoll"">0°</span></div>
+      <div class=""navballrow"">
+        <canvas id=""navball"" width=""440"" height=""440""></canvas>
+        <div class=""pair navpitch""><label>PITCH</label><span id=""atPitch"">0°</span></div>
+      </div>
+      <div class=""navbottom"">
+        <div class=""pair navyaw""><label>YAW</label><span id=""atHeading"">0°</span></div>
       </div>
       <div class=""navmodes"">
         <button class=""chip"" data-lock=""prograde"">PRO</button>
@@ -109,7 +111,7 @@ namespace JunoSecondScreen.Web
         <span id=""altAsl"">—</span>
       </div>
       <div class=""bignum"">
-        <label>SURFACE SPEED</label>
+        <label>SURFACE VELOCITY</label>
         <span id=""surfaceSpeed"">—</span>
       </div>
       <div class=""grid2"">
@@ -150,13 +152,22 @@ namespace JunoSecondScreen.Web
         <div class=""pair""><label>LONGITUDE</label><span id=""lon"">—</span></div>
       </div>
     </div>
+
+    <div class=""panel timewarp"">
+      <div class=""bignum"">
+        <label>TIME WARP</label>
+        <span id=""warpRate"">1×</span>
+      </div>
+      <div class=""warpbuttons"">
+        <button class=""chip"" id=""warpDown"">−</button>
+        <button class=""chip"" id=""warpPause"">PAUSE</button>
+        <button class=""chip"" id=""warpUp"">+</button>
+      </div>
+    </div>
   </section>
 
   <!-- ----------------------------------------------------------------- Orbit -->
   <section class=""panel-group"" data-panel=""orbit"" hidden>
-    <div class=""panel orbitplot"">
-      <canvas id=""orbitCanvas"" width=""620"" height=""620""></canvas>
-    </div>
     <div class=""panel readouts"">
       <div class=""bignum""><label>APOAPSIS</label><span id=""apoapsis"">—</span></div>
       <div class=""bignum""><label>PERIAPSIS</label><span id=""periapsis"">—</span></div>
@@ -167,6 +178,15 @@ namespace JunoSecondScreen.Web
         <div class=""pair""><label>INCLINATION</label><span id=""inc"">—</span></div>
         <div class=""pair""><label>PERIOD</label><span id=""period"">—</span></div>
         <div class=""pair""><label>BODY</label><span id=""orbitBody"">—</span></div>
+        <div class=""pair""><label>LAT</label><span id=""mapLat"">—</span></div>
+        <div class=""pair""><label>LON</label><span id=""mapLon"">—</span></div>
+      </div>
+    </div>
+    <div class=""panel orbitplot"">
+      <div class=""planetmap"">
+        <img id=""planetMapImg"" alt="""">
+        <canvas id=""groundTrackCanvas"" width=""1024"" height=""512""></canvas>
+        <div id=""planetMapEmpty"" class=""mapempty"" hidden>No map data yet</div>
       </div>
     </div>
   </section>
@@ -236,7 +256,7 @@ namespace JunoSecondScreen.Web
 <html lang=""en"">
 <head>
 <meta charset=""utf-8"">
-<title>Juno Second Screen</title>
+<title>Juno Tether</title>
 <meta name=""viewport"" content=""width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"">
 <meta name=""apple-mobile-web-app-capable"" content=""yes"">
 <meta name=""apple-mobile-web-app-status-bar-style"" content=""black-translucent"">
@@ -270,16 +290,18 @@ namespace JunoSecondScreen.Web
 </header>
 
 <main id=""main"">
+  <div class=""signallost globalsignal"" id=""globalSignalLost"" hidden>LOSS OF SIGNAL</div>
 
   <!-- ---------------------------------------------------------------- Flight -->
   <section class=""panel-group"" data-panel=""flight"">
     <div class=""panel navpanel"">
-      <canvas id=""navball"" width=""440"" height=""440""></canvas>
-      <div class=""attitude"">
-        <div class=""pair""><label>PITCH</label><span id=""atPitch"">0°</span></div>
-        <div class=""pair""><label>HDG</label><span id=""atHeading"">0°</span></div>
-        <div class=""pair""><label>ROLL</label><span id=""atRoll"">0°</span></div>
-        <div class=""pair""><label>AoA</label><span id=""atAoa"">0°</span></div>
+      <div class=""pair navroll""><label>ROLL</label><span id=""atRoll"">0°</span></div>
+      <div class=""navballrow"">
+        <canvas id=""navball"" width=""440"" height=""440""></canvas>
+        <div class=""pair navpitch""><label>PITCH</label><span id=""atPitch"">0°</span></div>
+      </div>
+      <div class=""navbottom"">
+        <div class=""pair navyaw""><label>YAW</label><span id=""atHeading"">0°</span></div>
       </div>
       <div class=""navmodes"">
         <button class=""chip"" data-lock=""prograde"">PRO</button>
@@ -296,7 +318,7 @@ namespace JunoSecondScreen.Web
         <span id=""altAsl"">—</span>
       </div>
       <div class=""bignum"">
-        <label>SURFACE SPEED</label>
+        <label>SURFACE VELOCITY</label>
         <span id=""surfaceSpeed"">—</span>
       </div>
       <div class=""grid2"">
@@ -337,13 +359,22 @@ namespace JunoSecondScreen.Web
         <div class=""pair""><label>LONGITUDE</label><span id=""lon"">—</span></div>
       </div>
     </div>
+
+    <div class=""panel timewarp"">
+      <div class=""bignum"">
+        <label>TIME WARP</label>
+        <span id=""warpRate"">1×</span>
+      </div>
+      <div class=""warpbuttons"">
+        <button class=""chip"" id=""warpDown"">−</button>
+        <button class=""chip"" id=""warpPause"">PAUSE</button>
+        <button class=""chip"" id=""warpUp"">+</button>
+      </div>
+    </div>
   </section>
 
   <!-- ----------------------------------------------------------------- Orbit -->
   <section class=""panel-group"" data-panel=""orbit"" hidden>
-    <div class=""panel orbitplot"">
-      <canvas id=""orbitCanvas"" width=""620"" height=""620""></canvas>
-    </div>
     <div class=""panel readouts"">
       <div class=""bignum""><label>APOAPSIS</label><span id=""apoapsis"">—</span></div>
       <div class=""bignum""><label>PERIAPSIS</label><span id=""periapsis"">—</span></div>
@@ -354,6 +385,15 @@ namespace JunoSecondScreen.Web
         <div class=""pair""><label>INCLINATION</label><span id=""inc"">—</span></div>
         <div class=""pair""><label>PERIOD</label><span id=""period"">—</span></div>
         <div class=""pair""><label>BODY</label><span id=""orbitBody"">—</span></div>
+        <div class=""pair""><label>LAT</label><span id=""mapLat"">—</span></div>
+        <div class=""pair""><label>LON</label><span id=""mapLon"">—</span></div>
+      </div>
+    </div>
+    <div class=""panel orbitplot"">
+      <div class=""planetmap"">
+        <img id=""planetMapImg"" alt="""">
+        <canvas id=""groundTrackCanvas"" width=""1024"" height=""512""></canvas>
+        <div id=""planetMapEmpty"" class=""mapempty"" hidden>No map data yet</div>
       </div>
     </div>
   </section>
@@ -498,7 +538,7 @@ body {
 
 /* ----------------------------------------------------------------- panels -- */
 
-#main { flex: 1 1 auto; min-height: 0; padding: var(--pad); }
+#main { position: relative; flex: 1 1 auto; min-height: 0; padding: var(--pad); }
 
 .panel-group {
   display: grid;
@@ -506,7 +546,7 @@ body {
   height: 100%;
   grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.1fr) minmax(260px, 1fr);
 }
-.panel-group[data-panel=""orbit""] { grid-template-columns: 1.2fr 1fr; }
+.panel-group[data-panel=""orbit""] { grid-template-columns: 220px 1fr; }
 .panel-group[data-panel=""view""] { grid-template-columns: 1fr; }
 .panel-group[data-panel=""mfd""] { grid-template-columns: 150px 1fr; }
 .panel-group[hidden] { display: none; }
@@ -543,16 +583,63 @@ body {
 
 /* ---------------------------------------------------------------- navball -- */
 
-.navpanel { align-items: center; }
-#navball { width: 100%; max-width: min(100%, 58vh); height: auto; aspect-ratio: 1; }
-.attitude { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; }
-.attitude .pair span { font-size: 15px; }
+.navpanel { align-items: center; justify-content: center; gap: 10px; }
+.navroll, .navyaw { align-items: center; text-align: center; }
+.navroll span, .navpitch span, .navyaw span { font-size: 15px; }
+.navballrow { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; }
+/* 25% smaller than the previous min(100%, 58vh). */
+#navball { width: 75%; max-width: min(75%, 43.5vh); height: auto; aspect-ratio: 1; }
+.navbottom { display: flex; justify-content: center; }
+/* Dead center (matching the navpanel's own width) reads as off relative to
+   the ball itself, since the ball shares its row with the pitch readout and
+   isn't actually centered in the panel - both roll and yaw need this same
+   leftward correction to land above/below the ball's true center instead. */
+.navroll, .navyaw { transform: translateX(-28px); }
 .navmodes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+
+/* ------------------------------------------------------- flight right column */
+
+/* The 3rd column (perf, timewarp) is split into two stacked panels by giving
+   the flight tab's own grid two rows: navpanel/readouts span both (unchanged
+   from a single tall row), perf/timewarp each take one. A nested flex
+   wrapper was tried first instead of this and had to be abandoned - a flex
+   column sized by grid-auto-rows: min-content collapsed to near-nothing
+   because its ""overflow: hidden"" panel children report a min-content
+   contribution of ~0 rather than their real content height. Direct grid
+   rows don't have that problem - it's the same technique already used for
+   every other panel here. */
+/* auto (not 1fr) - timewarp only needs room for its own content, so perf
+   keeps the rest instead of splitting the column exactly in half, which was
+   tall enough to crop text off the bottom of the perf panel above it. */
+.panel-group[data-panel=""flight""] { grid-template-rows: 1fr auto; }
+.panel-group[data-panel=""flight""] .navpanel,
+.panel-group[data-panel=""flight""] .readouts { grid-row: 1 / span 2; }
+.panel-group[data-panel=""flight""] .perf { grid-row: 1; }
+.panel-group[data-panel=""flight""] .timewarp { grid-row: 2; }
+.timewarp { align-items: center; justify-content: center; gap: 8px; }
+.timewarp .bignum { align-items: center; text-align: center; }
+.warpbuttons { display: flex; gap: 10px; }
+.warpbuttons .chip { min-width: 68px; padding: 16px 20px; font-size: 18px; text-align: center; }
+#warpPause.on { background: var(--warn); border-color: var(--warn); }
 
 /* ------------------------------------------------------------- orbit plot -- */
 
 .orbitplot { align-items: center; justify-content: center; }
-#orbitCanvas { width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; object-fit: contain; }
+.planetmap { position: relative; width: 100%; max-height: 100%; aspect-ratio: 2 / 1; }
+#planetMapImg, #groundTrackCanvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  border-radius: 8px;
+}
+#planetMapImg { object-fit: cover; background: var(--panel-2); border: 1px solid var(--line); }
+#groundTrackCanvas { pointer-events: none; }
+.mapempty {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 14px;
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.mapempty[hidden] { display: none; }
 
 /* ------------------------------------------------------------------ video -- */
 
@@ -588,6 +675,11 @@ body {
   pointer-events: none;
 }
 .signallost[hidden] { display: none; }
+/* Sits above whichever tab's panel-group is currently showing, covering the
+   whole main content area rather than just one feed's own small box - see
+   app.js for why this one specifically reflects the telemetry connection
+   itself, not a single video/MFD feed. */
+.globalsignal { z-index: 10; font-size: 28px; }
 @keyframes signallost-blink {
   50% { opacity: .35; }
 }
@@ -789,7 +881,16 @@ body {
 @media (max-width: 1100px) {
   .panel-group { grid-template-columns: 1fr 1fr; grid-auto-rows: min-content; overflow-y: auto; }
   .panel-group[data-panel=""orbit""] { grid-template-columns: 1fr 1fr; }
-  .panel-group[data-panel=""flight""] .perf { grid-column: 1 / -1; }
+  /* Undo the desktop-only explicit 2-row grid (see the flight-right-column
+     comment above) - here rows flow naturally, and perf/timewarp each just
+     take their own full-width row below navpanel/readouts. */
+  .panel-group[data-panel=""flight""] { grid-template-rows: none; }
+  .panel-group[data-panel=""flight""] .navpanel,
+  .panel-group[data-panel=""flight""] .readouts,
+  .panel-group[data-panel=""flight""] .perf,
+  .panel-group[data-panel=""flight""] .timewarp { grid-row: auto; }
+  .panel-group[data-panel=""flight""] .perf,
+  .panel-group[data-panel=""flight""] .timewarp { grid-column: 1 / -1; }
   .panel-group[data-panel=""flight""] .perf .grid2 { grid-template-columns: repeat(4, 1fr); }
   .clocks { display: none; }
   .controls { grid-template-columns: 85px 1fr 130px; height: 118px; }
@@ -808,7 +909,7 @@ body {
             ContentTypes["/app.css"] = "text/css; charset=utf-8";
 
             Content["/app.js"] = Encoding.UTF8.GetBytes(@"/*
- * Juno Second Screen - tablet console client.
+ * Juno Tether - tablet console client.
  *
  * Talks to the in-game mod over a single WebSocket: telemetry frames come down,
  * control commands go up. The MJPEG view feed is a separate <img> connection so
@@ -897,6 +998,12 @@ body {
     socket.onopen = function () {
       retryDelay = 500;
       el('conn').className = 'dot live';
+      // The server tracks MFD-/Orbit-tab visibility per connection (see
+      // TryHandleTabActiveCommand), so a reconnect starts both counts back
+      // at ""not watching"" until told otherwise - resend the client's actual
+      // current state rather than waiting for the next tab switch to do it.
+      if (mfdTabActive) sendMfdTabActive();
+      if (orbitTabActive) sendOrbitTabActive();
     };
 
     socket.onmessage = function (ev) {
@@ -975,6 +1082,12 @@ body {
   var lastGroupSignature = '';
 
   function render(t) {
+    // Any telemetry message at all means the connection itself is alive -
+    // distinct from the ""conn"" dot's ""stale"" class just below, which is
+    // reused (for its visual, not its meaning) to flag ""no craft in flight""
+    // even while telemetry keeps arriving perfectly normally.
+    el('globalSignalLost').hidden = true;
+
     if (!t.inFlight) {
       setText('craftName', 'Not in flight');
       setText('planetName', '—');
@@ -999,7 +1112,6 @@ body {
     setText('atPitch', fmtDeg(t.pitch));
     setText('atHeading', fmtDeg(t.heading, 0));
     setText('atRoll', fmtDeg(t.roll));
-    setText('atAoa', fmtDeg(t.aoa));
 
     bar('barFuel', 'valFuel', t.fuel);
     bar('barMono', 'valMono', t.monoprop);
@@ -1036,9 +1148,11 @@ body {
     if (!throttleHeld) setThrottleDisplay(t.throttle);
     syncGroups(t.groups || []);
     setToggle('translation', t.translationMode);
+    drawWarp(t);
 
     drawNavball(t);
-    drawOrbit(t);
+    refreshPlanetMap(t);
+    drawGroundTrack(t);
   }
 
   function bar(fillId, valueId, fraction) {
@@ -1070,6 +1184,35 @@ body {
     groups.forEach(function (g) {
       var node = row.querySelector('[data-group=""' + g.i + '""]');
       if (node) node.classList.toggle('on', !!g.on);
+    });
+  }
+
+  /* --------------------------------------------------------------- timewarp */
+
+  function drawWarp(t) {
+    var paused = !!t.paused;
+    var warp = isFinite(t.warp) ? t.warp : 1;
+    // Sub-1x warp (physics/fine-control rates like 0.5x, 0.25x) rounds away
+    // to nothing at 0 decimal places - show 2 decimals only down there,
+    // where the extra precision actually matters.
+    var text = paused ? '0×' : (warp < 1 ? warp.toFixed(2) : Math.round(warp)) + '×';
+    setText('warpRate', text);
+    var pauseButton = el('warpPause');
+    if (pauseButton) pauseButton.classList.toggle('on', paused);
+  }
+
+  function bindWarp() {
+    el('warpUp').addEventListener('pointerdown', function (ev) {
+      ev.preventDefault();
+      send({ cmd: 'warp', d: 1 });
+    });
+    el('warpDown').addEventListener('pointerdown', function (ev) {
+      ev.preventDefault();
+      send({ cmd: 'warp', d: -1 });
+    });
+    el('warpPause').addEventListener('pointerdown', function (ev) {
+      ev.preventDefault();
+      send({ cmd: 'pause' });
     });
   }
 
@@ -1217,95 +1360,122 @@ body {
 
   function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
 
-  /* ----------------------------------------------------------- orbit plot */
+  /* ------------------------------------------------------------ planet map */
 
-  function drawOrbit(t) {
-    var canvas = el('orbitCanvas');
+  // The map itself only changes when the orbited planet does, so it's loaded
+  // once per planet rather than polled - but the server may not have a PNG
+  // cached yet on the very first request after switching planets/reconnecting,
+  // so a 503/error retries on a timer until one shows up.
+  var planetMapPlanet = null;
+  var planetMapRetryTimer = null;
+
+  function refreshPlanetMap(t) {
+    if (!t.planet || t.planet === planetMapPlanet) return;
+    loadPlanetMap(t.planet);
+  }
+
+  function loadPlanetMap(planet) {
+    planetMapPlanet = planet;
+    clearTimeout(planetMapRetryTimer);
+
+    var img = el('planetMapImg');
+    img.onload = function () {
+      el('planetMapEmpty').hidden = true;
+    };
+    img.onerror = function () {
+      el('planetMapEmpty').hidden = false;
+      planetMapRetryTimer = setTimeout(function () {
+        if (planetMapPlanet === planet) loadPlanetMap(planet);
+      }, 2000);
+    };
+    var params = new URLSearchParams();
+    if (TOKEN) params.set('t', TOKEN);
+    params.set('r', Date.now());
+    img.src = '/planetmap.png?' + params.toString();
+  }
+
+  function drawGroundTrack(t) {
+    var canvas = el('groundTrackCanvas');
     var ctx = canvas.getContext('2d');
     var w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
-    var Rp = t.planetRadius;
-    if (!isFinite(Rp) || Rp <= 0) return;
+    drawTrajectory(ctx, w, h, t);
 
-    var rp = t.periapsis + Rp;
-    var ra = t.apoapsis + Rp;
-    var suborbital = !(isFinite(ra) && ra > rp && rp > 0);
-    var a = (ra + rp) / 2;
-    var e = suborbital ? (isFinite(t.eccentricity) ? t.eccentricity : 0) : (ra - rp) / (ra + rp);
+    setText('mapLat', fmtDeg(t.latitude, 2));
+    setText('mapLon', fmtDeg(t.longitude, 2));
 
-    var extent = suborbital ? Rp * 1.6 : Math.max(ra, Rp * 1.2) * 1.12;
-    var scale = (Math.min(w, h) / 2 - 12) / extent;
-    var cx = w / 2, cy = h / 2;
+    if (!isFinite(t.latitude) || !isFinite(t.longitude)) return;
 
-    // planet
-    var grd = ctx.createRadialGradient(cx, cy, Rp * scale * 0.2, cx, cy, Rp * scale);
-    grd.addColorStop(0, '#1b3b57');
-    grd.addColorStop(1, '#0e2233');
-    ctx.fillStyle = grd;
+    // standard equirectangular projection: lon -180..180 -> x 0..w, lat 90..-90 -> y 0..h.
+    // Wrapped to -180..180 first: ModApi's own doc comment for
+    // GetSurfaceCoordinates (the source of t.longitude) says its range is
+    // ""Zero to 2*PI"" - i.e. 0..360 - which would place anything west of the
+    // prime meridian off the right edge of this formula without the wrap.
+    var lon = ((t.longitude + 180) % 360 + 360) % 360 - 180;
+    var x = (lon + 180) / 360 * w;
+    var y = (90 - t.latitude) / 180 * h;
+
     ctx.beginPath();
-    ctx.arc(cx, cy, Rp * scale, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#2b5877';
-    ctx.lineWidth = 1;
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.strokeStyle = '#0b1a26';
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    if (isFinite(t.atmosphereHeight) && t.atmosphereHeight > 0) {
-      ctx.save();
-      ctx.setLineDash([4, 6]);
-      ctx.strokeStyle = 'rgba(79,209,224,0.35)';
-      ctx.beginPath();
-      ctx.arc(cx, cy, (Rp + t.atmosphereHeight) * scale, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
-    if (!suborbital) {
-      var b = a * Math.sqrt(Math.max(0, 1 - e * e));
-      var c = a * e;
-      ctx.save();
-      ctx.translate(cx - c * scale, cy);
-      ctx.strokeStyle = '#4fd1e0';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, a * scale, b * scale, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      marker(ctx, cx + ra * scale, cy, '#f0a63c', 'Ap');
-      marker(ctx, cx - rp * scale, cy, '#57c98a', 'Pe');
-
-      // craft position from the conic equation, branch chosen by radial velocity
-      var r = t.radius;
-      if (isFinite(r) && r > 0 && e >= 0) {
-        var cosNu = e > 1e-6 ? ((a * (1 - e * e) / r) - 1) / e : 1;
-        cosNu = Math.max(-1, Math.min(1, cosNu));
-        var nu = Math.acos(cosNu);
-        if (t.verticalSpeed < 0) nu = -nu;
-        var px = cx + r * Math.cos(nu) * scale;
-        var py = cy - r * Math.sin(nu) * scale;
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else {
-      ctx.fillStyle = '#7f90a8';
-      ctx.font = '14px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Suborbital', cx, cy + Rp * scale + 26);
-    }
-
-    ctx.textAlign = 'left';
-  }
-
-  function marker(ctx, x, y, color, label) {
-    ctx.fillStyle = color;
+    ctx.fillStyle = '#ffd23f';
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, Math.PI * 2);
     ctx.fill();
-    ctx.font = '12px -apple-system, sans-serif';
-    ctx.fillText(label, x + 8, y + 4);
+  }
+
+  /* ------------------------------------------------------- ground trajectory */
+
+  // Past and future ground track, sampled server-side directly from the
+  // game's own orbit simulation (IOrbitNode.GetPointAtTime) - see
+  // TelemetryCollector.WriteTrajectory/WriteGroundTrack. No propagation math
+  // happens here; trajPast/trajFuture already arrive as flat
+  // [lat, lon, lat, lon, ...] degree arrays.
+
+  function drawTrajectory(ctx, w, h, t) {
+    if (!t.trajectoryAvailable) return;
+
+    strokeGroundTrack(ctx, w, h, t.trajPast, 'rgba(79,209,224,0.5)');
+    strokeGroundTrack(ctx, w, h, t.trajFuture, 'rgba(79,209,224,0.9)');
+  }
+
+  // points is a flat [lat, lon, lat, lon, ...] array in degrees.
+  function strokeGroundTrack(ctx, w, h, points, color) {
+    if (!points || points.length < 4) return;
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+
+    var prevX = null;
+    for (var i = 0; i + 1 < points.length; i += 2) {
+      var lat = points[i], lon = points[i + 1];
+      var x = (lon + 180) / 360 * w;
+      var y = (90 - lat) / 180 * h;
+      // A big horizontal jump between consecutive samples means the ground
+      // track crossed the antimeridian - start a new segment instead of
+      // drawing a line straight across the map.
+      if (prevX === null || Math.abs(x - prevX) > w / 2) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+      prevX = x;
+    }
+
+    ctx.stroke();
+    ctx.restore();
   }
 
   /* ------------------------------------------------------------------- mfd */
@@ -1315,6 +1485,19 @@ body {
   var mfdSelectSignature = '';
   var mfdTabActive = false;
   var viewTabActive = false;
+  var orbitTabActive = false;
+
+  // Lets the server skip walking every MFD's widget tree (expensive - see
+  // MfdCollector.Build) while nobody has the tab open to look at it.
+  function sendMfdTabActive() {
+    send({ cmd: 'mfdTabActive', on: mfdTabActive });
+  }
+
+  // Lets the server skip sampling the orbit ground-track (also not free -
+  // see TelemetryCollector.WriteTrajectory) while nobody's on the Orbit tab.
+  function sendOrbitTabActive() {
+    send({ cmd: 'orbitTabActive', on: orbitTabActive });
+  }
 
   function renderMfdList(mfds) {
     mfdList = mfds;
@@ -1373,6 +1556,10 @@ body {
   // tab's feed, so an unwatched MFD doesn't keep a camera/stream running
   // server-side.
   function refreshMfdFeed() {
+    // See refreshViewFeed's comment - the same connection-leak risk applies
+    // here when switching between MFDs while staying on the tab.
+    send({ cmd: 'stopMfdFeed' });
+
     var img = el('mfdFeed');
     if (!mfdTabActive || !mfdSelectedPart) {
       img.removeAttribute('src');
@@ -1494,7 +1681,14 @@ body {
 
       var wasMfdActive = mfdTabActive;
       mfdTabActive = tab === 'mfd';
-      if (mfdTabActive !== wasMfdActive) refreshMfdFeed();
+      if (mfdTabActive !== wasMfdActive) {
+        refreshMfdFeed();
+        sendMfdTabActive();
+      }
+
+      var wasOrbitActive = orbitTabActive;
+      orbitTabActive = tab === 'orbit';
+      if (orbitTabActive !== wasOrbitActive) sendOrbitTabActive();
 
       // Disconnects in the background on leaving the tab (also tells the
       // server to drop any connection still open, since switching targets
@@ -1538,6 +1732,14 @@ body {
   function attachMfdFeedHandlers(img) {
     img.addEventListener('error', function () {
       if (mfdTabActive) el('mfdEmpty').textContent = 'feed interrupted';
+      // Unlike the WebSocket (which retries itself on close), a failed MJPEG
+      // <img> just sits broken forever with nothing to notice or recover -
+      // the same transient network drop that killed a WebSocket connection
+      // (which does reconnect on its own) could equally kill this stream
+      // without ever surfacing here as anything more than a quiet stall.
+      scheduleReconnect('mfd', function () {
+        if (mfdTabActive && mfdSelectedPart) refreshMfdFeed();
+      });
     });
     img.addEventListener('click', function (ev) {
       if (!mfdSelectedPart) return;
@@ -1623,7 +1825,23 @@ body {
   function attachVideoFeedHandlers(img) {
     img.addEventListener('error', function () {
       if (state.videoOn) el('videoNote').textContent = 'feed interrupted';
+      // See attachMfdFeedHandlers - the same reasoning applies here.
+      scheduleReconnect('view', function () {
+        if (viewTabActive && state.videoOn) reconnectVideoFeed(el('viewCameraSelect').value);
+      });
     });
+  }
+
+  // One pending retry per feed at a time, so a burst of error events (e.g.
+  // several multipart parts failing in a row during a network drop) doesn't
+  // pile up multiple overlapping reconnect attempts.
+  var pendingReconnects = {};
+  function scheduleReconnect(kind, attempt) {
+    if (pendingReconnects[kind]) return;
+    pendingReconnects[kind] = setTimeout(function () {
+      pendingReconnects[kind] = null;
+      attempt();
+    }, 1500);
   }
 
   // Reconnects the View tab's <img> at the given camera (see reconnectImg
@@ -1642,12 +1860,20 @@ body {
   // (toggling the button, switching tabs) and when picking a different
   // camera while already watching.
   function refreshViewFeed() {
+    // Always tell the server to drop whatever view connections it's holding
+    // first - not just when leaving the tab. Switching cameras while still
+    // on the tab abandons the old <img> client-side, but browsers (Safari
+    // especially) don't reliably close a long-lived MJPEG connection just
+    // because the <img> using it was replaced, so without this the old
+    // camera's connection leaks and a few switches eventually hit the
+    // server's connection cap.
+    send({ cmd: 'stopViewFeed' });
+
     if (!viewTabActive || !state.videoOn) {
       var img = el('videoFeed');
       img.removeAttribute('src');
       img.classList.remove('on');
       el('viewSignalLost').hidden = true;
-      send({ cmd: 'stopViewFeed' });
       return;
     }
 
@@ -1672,8 +1898,17 @@ body {
 
   setInterval(function () {
     if (!state.lastFrameAt) return;
-    if (performance.now() - state.lastFrameAt > 2000 && socket && socket.readyState === 1) {
+    var silentMs = performance.now() - state.lastFrameAt;
+    if (silentMs > 2000 && socket && socket.readyState === 1) {
       el('conn').className = 'dot stale';
+    }
+    // Same SIGNAL_TIMEOUT_MS threshold as the MFD/View feeds, but reflecting
+    // the telemetry connection itself rather than one specific video feed -
+    // visible regardless of which tab is open, since telemetry going stale
+    // affects every tab's data, not just a feed someone happens to be
+    // watching.
+    if (socket && socket.readyState === 1) {
+      el('globalSignalLost').hidden = silentMs <= SIGNAL_TIMEOUT_MS;
     }
   }, 1000);
 
@@ -1723,6 +1958,21 @@ body {
 
   setInterval(updateSignalOverlays, 1000);
 
+  // Belt-and-suspenders against a failure mode neither the error handlers
+  // above nor the server-driven LOSS OF SIGNAL overlay can see: on a long-
+  // running multipart/x-mixed-replace <img>, some browsers' image decoder
+  // can quietly stop painting new frames while the network layer keeps
+  // right on receiving them - no error event fires (nothing failed from the
+  // browser's point of view), and the server-reported frame counter (what
+  // LOSS OF SIGNAL watches) keeps climbing right along with it, since the
+  // server has no way to know the picture on screen stopped updating.
+  // Periodically forcing a fresh connection is the only way to bound how
+  // long a silent stall like that can last.
+  setInterval(function () {
+    if (mfdTabActive && mfdSelectedPart) refreshMfdFeed();
+    if (viewTabActive && state.videoOn) reconnectVideoFeed(el('viewCameraSelect').value);
+  }, 25000);
+
   // Mobile browsers throttle/pause a backgrounded tab's long-lived MJPEG
   // connections (screen lock, app switch, etc.), and don't reliably resume
   // rendering new multipart frames on their own once the tab is foregrounded
@@ -1744,14 +1994,15 @@ body {
   bindTabs();
   bindMfd();
   bindVideo();
+  bindWarp();
   connect();
 })();
 ");
             ContentTypes["/app.js"] = "application/javascript; charset=utf-8";
 
             Content["/manifest.webmanifest"] = Encoding.UTF8.GetBytes(@"{
-  ""name"": ""Juno Second Screen"",
-  ""short_name"": ""Juno"",
+  ""name"": ""Juno Tether"",
+  ""short_name"": ""Tether"",
   ""start_url"": ""./"",
   ""display"": ""standalone"",
   ""orientation"": ""landscape"",

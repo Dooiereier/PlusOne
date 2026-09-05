@@ -107,12 +107,39 @@ namespace JunoSecondScreen.Util
         }
 
         /// <summary>
+        /// Splices in one or more already-serialized "key":value pairs (no
+        /// wrapping braces, no leading/trailing comma) as the next entries of
+        /// the current object scope. Lets an expensive fragment be built once
+        /// and reused verbatim across frames instead of re-serialized every
+        /// time - see TelemetryCollector's trajectory cache for why.
+        /// </summary>
+        public void AppendRaw(string rawJson)
+        {
+            if (string.IsNullOrEmpty(rawJson))
+            {
+                return;
+            }
+
+            Separate();
+            _builder.Append(rawJson);
+        }
+
+        /// <summary>
         /// Writes a single string as the next element of the current array scope.
         /// </summary>
         public void Value(string value)
         {
             Separate();
             WriteString(value);
+        }
+
+        /// <summary>
+        /// Writes a single number as the next element of the current array scope.
+        /// </summary>
+        public void Value(double value)
+        {
+            Separate();
+            WriteNumber(value);
         }
 
         public override string ToString()

@@ -12,12 +12,12 @@ namespace JunoSecondScreen
     /// </summary>
     internal static class DeployTools
     {
-        private const string ModFileName = "Second Screen.sr2-mod";
-        private const string ModInfoFileName = "Second Screen.sr2-mod-info";
+        private const string ModFileName = "Juno Tether.sr2-mod";
+        private const string ModInfoFileName = "Juno Tether.sr2-mod-info";
         private const int CopyRetryCount = 8;
         private const int CopyRetryDelayMs = 300;
 
-        [MenuItem("Tools/Second Screen/Deploy Built Mod To Juno")]
+        [MenuItem("Tools/Juno Tether/Deploy Built Mod To Juno")]
         private static void DeployBuiltMod()
         {
             string buildOutput = Path.Combine(ProjectRoot(), "ModAssetBundles");
@@ -27,7 +27,7 @@ namespace JunoSecondScreen
             if (!File.Exists(builtMod))
             {
                 EditorUtility.DisplayDialog(
-                    "Second Screen",
+                    "Juno Tether",
                     "No built mod package was found.\n\n" +
                     $"Build the mod first so that {Path.Combine("ModAssetBundles", ModFileName)} exists, then run this again.",
                     "OK");
@@ -46,21 +46,21 @@ namespace JunoSecondScreen
                     CopyWithRetries(builtInfo, Path.Combine(modsDirectory, ModInfoFileName));
                 }
 
-                Debug.Log($"Second Screen deployed to {modsDirectory}");
-                EditorUtility.DisplayDialog("Second Screen", "Deployed the mod into Juno's mods folder.", "OK");
+                Debug.Log($"Juno Tether deployed to {modsDirectory}");
+                EditorUtility.DisplayDialog("Juno Tether", "Deployed the mod into Juno's mods folder.", "OK");
             }
             catch (IOException ex)
             {
-                Debug.LogError($"Second Screen deploy failed: {ex}");
+                Debug.LogError($"Juno Tether deploy failed: {ex}");
                 EditorUtility.DisplayDialog(
-                    "Second Screen",
+                    "Juno Tether",
                     "Could not overwrite the installed mod because the file is in use.\n\n" +
                     "Close Juno: New Origins, then run this again.",
                     "OK");
             }
         }
 
-        [MenuItem("Tools/Second Screen/Open Juno Mods Folder")]
+        [MenuItem("Tools/Juno Tether/Open Juno Mods Folder")]
         private static void OpenJunoModsFolder()
         {
             string modsDirectory = JunoModsDirectory();

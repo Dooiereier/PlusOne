@@ -77,7 +77,7 @@ body {
 
 /* ----------------------------------------------------------------- panels -- */
 
-#main { flex: 1 1 auto; min-height: 0; padding: var(--pad); }
+#main { position: relative; flex: 1 1 auto; min-height: 0; padding: var(--pad); }
 
 .panel-group {
   display: grid;
@@ -85,7 +85,7 @@ body {
   height: 100%;
   grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.1fr) minmax(260px, 1fr);
 }
-.panel-group[data-panel="orbit"] { grid-template-columns: 1.2fr 1fr; }
+.panel-group[data-panel="orbit"] { grid-template-columns: 220px 1fr; }
 .panel-group[data-panel="view"] { grid-template-columns: 1fr; }
 .panel-group[data-panel="mfd"] { grid-template-columns: 150px 1fr; }
 .panel-group[hidden] { display: none; }
@@ -122,16 +122,63 @@ body {
 
 /* ---------------------------------------------------------------- navball -- */
 
-.navpanel { align-items: center; }
-#navball { width: 100%; max-width: min(100%, 58vh); height: auto; aspect-ratio: 1; }
-.attitude { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; }
-.attitude .pair span { font-size: 15px; }
+.navpanel { align-items: center; justify-content: center; gap: 10px; }
+.navroll, .navyaw { align-items: center; text-align: center; }
+.navroll span, .navpitch span, .navyaw span { font-size: 15px; }
+.navballrow { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; }
+/* 25% smaller than the previous min(100%, 58vh). */
+#navball { width: 75%; max-width: min(75%, 43.5vh); height: auto; aspect-ratio: 1; }
+.navbottom { display: flex; justify-content: center; }
+/* Dead center (matching the navpanel's own width) reads as off relative to
+   the ball itself, since the ball shares its row with the pitch readout and
+   isn't actually centered in the panel - both roll and yaw need this same
+   leftward correction to land above/below the ball's true center instead. */
+.navroll, .navyaw { transform: translateX(-28px); }
 .navmodes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+
+/* ------------------------------------------------------- flight right column */
+
+/* The 3rd column (perf, timewarp) is split into two stacked panels by giving
+   the flight tab's own grid two rows: navpanel/readouts span both (unchanged
+   from a single tall row), perf/timewarp each take one. A nested flex
+   wrapper was tried first instead of this and had to be abandoned - a flex
+   column sized by grid-auto-rows: min-content collapsed to near-nothing
+   because its "overflow: hidden" panel children report a min-content
+   contribution of ~0 rather than their real content height. Direct grid
+   rows don't have that problem - it's the same technique already used for
+   every other panel here. */
+/* auto (not 1fr) - timewarp only needs room for its own content, so perf
+   keeps the rest instead of splitting the column exactly in half, which was
+   tall enough to crop text off the bottom of the perf panel above it. */
+.panel-group[data-panel="flight"] { grid-template-rows: 1fr auto; }
+.panel-group[data-panel="flight"] .navpanel,
+.panel-group[data-panel="flight"] .readouts { grid-row: 1 / span 2; }
+.panel-group[data-panel="flight"] .perf { grid-row: 1; }
+.panel-group[data-panel="flight"] .timewarp { grid-row: 2; }
+.timewarp { align-items: center; justify-content: center; gap: 8px; }
+.timewarp .bignum { align-items: center; text-align: center; }
+.warpbuttons { display: flex; gap: 10px; }
+.warpbuttons .chip { min-width: 68px; padding: 16px 20px; font-size: 18px; text-align: center; }
+#warpPause.on { background: var(--warn); border-color: var(--warn); }
 
 /* ------------------------------------------------------------- orbit plot -- */
 
 .orbitplot { align-items: center; justify-content: center; }
-#orbitCanvas { width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; object-fit: contain; }
+.planetmap { position: relative; width: 100%; max-height: 100%; aspect-ratio: 2 / 1; }
+#planetMapImg, #groundTrackCanvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  border-radius: 8px;
+}
+#planetMapImg { object-fit: cover; background: var(--panel-2); border: 1px solid var(--line); }
+#groundTrackCanvas { pointer-events: none; }
+.mapempty {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 14px;
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.mapempty[hidden] { display: none; }
 
 /* ------------------------------------------------------------------ video -- */
 
@@ -167,6 +214,11 @@ body {
   pointer-events: none;
 }
 .signallost[hidden] { display: none; }
+/* Sits above whichever tab's panel-group is currently showing, covering the
+   whole main content area rather than just one feed's own small box - see
+   app.js for why this one specifically reflects the telemetry connection
+   itself, not a single video/MFD feed. */
+.globalsignal { z-index: 10; font-size: 28px; }
 @keyframes signallost-blink {
   50% { opacity: .35; }
 }
@@ -368,7 +420,16 @@ body {
 @media (max-width: 1100px) {
   .panel-group { grid-template-columns: 1fr 1fr; grid-auto-rows: min-content; overflow-y: auto; }
   .panel-group[data-panel="orbit"] { grid-template-columns: 1fr 1fr; }
-  .panel-group[data-panel="flight"] .perf { grid-column: 1 / -1; }
+  /* Undo the desktop-only explicit 2-row grid (see the flight-right-column
+     comment above) - here rows flow naturally, and perf/timewarp each just
+     take their own full-width row below navpanel/readouts. */
+  .panel-group[data-panel="flight"] { grid-template-rows: none; }
+  .panel-group[data-panel="flight"] .navpanel,
+  .panel-group[data-panel="flight"] .readouts,
+  .panel-group[data-panel="flight"] .perf,
+  .panel-group[data-panel="flight"] .timewarp { grid-row: auto; }
+  .panel-group[data-panel="flight"] .perf,
+  .panel-group[data-panel="flight"] .timewarp { grid-column: 1 / -1; }
   .panel-group[data-panel="flight"] .perf .grid2 { grid-template-columns: repeat(4, 1fr); }
   .clocks { display: none; }
   .controls { grid-template-columns: 85px 1fr 130px; height: 118px; }

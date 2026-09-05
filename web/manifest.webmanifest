@@ -1,6 +1,6 @@
 {
-  "name": "Juno Second Screen",
-  "short_name": "Juno",
+  "name": "Juno Tether",
+  "short_name": "Tether",
   "start_url": "./",
   "display": "standalone",
   "orientation": "landscape",

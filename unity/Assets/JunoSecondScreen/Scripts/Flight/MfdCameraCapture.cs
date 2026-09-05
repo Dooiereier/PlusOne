@@ -3,11 +3,11 @@ namespace JunoSecondScreen.Flight
     using UnityEngine;
 
     /// <summary>
-    /// Attaches a dedicated camera as a child of an MFD's Canvas RectTransform,
-    /// framed to fill as much of the MFD screen as possible. Being a child of
-    /// the canvas means it moves in perfect lockstep with it, including through
-    /// floating-origin resets, since Unity moves an entire parent/child
-    /// hierarchy as one operation.
+    /// Attaches a dedicated camera framed to fill as much of an MFD's screen
+    /// as possible, parented one level above the MFD's own Canvas (see
+    /// Setup's own comment for why not the canvas itself) so it still moves
+    /// in perfect lockstep with it through floating-origin resets, since
+    /// those translate the whole part hierarchy, not just the canvas.
     ///
     /// The camera renders only to an off-screen RenderTexture (never to the
     /// player's actual display), so it is never visible in-game by itself.
@@ -49,7 +49,6 @@ namespace JunoSecondScreen.Flight
             Vector3 lossyScale = rect.lossyScale;
             float scaleX = Mathf.Abs(lossyScale.x) > 0.0001f ? Mathf.Abs(lossyScale.x) : 1f;
             float scaleY = Mathf.Abs(lossyScale.y) > 0.0001f ? Mathf.Abs(lossyScale.y) : 1f;
-            float scaleZ = Mathf.Abs(lossyScale.z) > 0.0001f ? Mathf.Abs(lossyScale.z) : 1f;
 
             float worldWidth = width * scaleX;
             float worldHeight = height * scaleY;
@@ -62,17 +61,36 @@ namespace JunoSecondScreen.Flight
             // regardless of its physical size.
             float worldDistance = Mathf.Max(worldWidth, worldHeight) + NearFarPadding * 2f;
 
+            // Deliberately NOT parented directly under the canvas's own
+            // RectTransform (a previous version did exactly that). An MFD's
+            // "page" switch can rebuild its contents by destroying every
+            // child of that same Transform and instantiating the new page's
+            // widgets - a direct child of ours would get swept up and
+            // destroyed right along with them, and every subsequent
+            // Camera.Render() call against that now-destroyed camera is
+            // undefined behavior that was found to corrupt the whole
+            // canvas's rendering (a black MFD screen) after a page switch.
+            // One level up (the canvas's own parent) is outside whatever the
+            // canvas clears on a page rebuild, while still moving in perfect
+            // lockstep with it through floating-origin resets, since those
+            // translate the whole part hierarchy, not just the canvas.
+            Transform parent = rect.parent != null ? rect.parent : rect;
+
+            // Computed in world space (unambiguous) rather than local space
+            // relative to 'parent', since 'parent' is no longer necessarily
+            // the canvas itself - its own scale/rotation may differ from the
+            // canvas's, which local-space math would otherwise need to
+            // separately account for.
+            Vector3 worldPosition = rect.position - (rect.forward * worldDistance);
+            Quaternion worldRotation = rect.rotation;
+
             var cameraObject = new GameObject("SecondScreen MFD Camera")
             {
                 hideFlags = HideFlags.HideAndDontSave,
             };
-            cameraObject.transform.SetParent(rect, false);
-
-            // localPosition is in the parent's unscaled local space, so divide
-            // by the parent's own Z scale to land exactly worldDistance meters
-            // away in world space, whatever that scale happens to be.
-            cameraObject.transform.localPosition = new Vector3(0f, 0f, -worldDistance / scaleZ);
-            cameraObject.transform.localRotation = Quaternion.identity;
+            cameraObject.transform.SetParent(parent, false);
+            cameraObject.transform.position = worldPosition;
+            cameraObject.transform.rotation = worldRotation;
 
             Camera = cameraObject.AddComponent<Camera>();
             Camera.orthographic = true;

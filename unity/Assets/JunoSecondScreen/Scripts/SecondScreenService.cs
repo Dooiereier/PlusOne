@@ -2,6 +2,7 @@ namespace JunoSecondScreen
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Security.Cryptography;
     using System.Text;
@@ -28,6 +29,7 @@ namespace JunoSecondScreen
         private readonly MfdCollector _mfdCollector = new MfdCollector();
         private readonly CameraVantageCollector _cameraCollector = new CameraVantageCollector();
         private readonly CommandProcessor _commands = new CommandProcessor();
+        private readonly PlanetMapCache _planetMapCache = new PlanetMapCache();
         private readonly object _telemetrySignal = new object();
 
         // Switching MFDs/cameras repeatedly can leave old MJPEG connections
@@ -55,11 +57,68 @@ namespace JunoSecondScreen
         private string _persistentDataPath;
         private float _nextTelemetryTime;
         private float _nextMfdTime;
+        private float _nextPlanetMapCheckTime;
+
+        // Generating the planet map is a synchronous, main-thread-only
+        // engine call (PlanetCubemapUtility.CreateEquirectangularMap) that
+        // turned out to cost a noticeable stutter - a second or two of the
+        // whole game freezing was traced to it running the instant the
+        // server started, whether or not anyone had ever opened the Orbit
+        // tab. Set from ServePlanetMap (a background connection thread) the
+        // first time a client actually asks for /planetmap.png; read from
+        // RefreshPlanetMap (main thread) to gate generation on that instead
+        // of on the server simply being on - so the cost lands when someone
+        // opens the tab, not when the mod is enabled.
+        private volatile bool _planetMapRequested;
         private float _nextConfigurationCheck;
         private int _consoleClients;
+
+        // How many connected consoles currently have their MFD tab open -
+        // same idea as _planetMapRequested above, but per-connection rather
+        // than sticky/one-way, since a client can leave the tab again. Gates
+        // MfdCollector's expensive full-widget-tree walk (see its own doc
+        // comment) so it's only paid while someone can actually see it,
+        // rather than on every connected client regardless of their tab.
+        private int _mfdTabViewers;
+
+        // Same idea as _mfdTabViewers, for the Orbit tab's ground-track
+        // sampling (TelemetryCollector.WriteTrajectory) - that cost is
+        // already capped to twice a second, but there's no reason to pay it
+        // at all while every connected client is looking at some other tab.
+        private int _orbitTabViewers;
+
+        // Per-subsystem timing breakdown for Update(), to replace guessing
+        // about where an observed FPS hit actually comes from with a real
+        // number - e.g. distinguishing "this MonoBehaviour's own polling
+        // work" from "a Harmony patch adding overhead to a game method this
+        // never touches directly" (which this diagnostic would show as *no*
+        // added cost here, despite a real FPS drop). Logged as an average
+        // per-frame ms cost over the last UpdateDiagIntervalSeconds, not per
+        // frame, so it stays readable.
+        private const float UpdateDiagIntervalSeconds = 3f;
+        private readonly Stopwatch _diagStopwatch = new Stopwatch();
+        private double _diagCommandsMs, _diagTelemetryMs, _diagMfdMs, _diagAnnounceMs, _diagPlanetMapMs;
+        private int _diagFrameCount;
+        private float _nextUpdateDiagAt = float.NegativeInfinity;
+
+        // FrameTimingManager reports actual GPU frame time (on D3D11/D3D12/
+        // Metal/Vulkan) without needing the Profiler's GPU module, which
+        // isn't available in this project. This is what actually answers
+        // "is the GPU doing more work / taking longer per frame with the mod
+        // on", rather than more CPU-side Stopwatch timing that's already
+        // shown this mod's own code isn't the one spending the time.
+        private readonly UnityEngine.FrameTiming[] _diagFrameTimings = new UnityEngine.FrameTiming[1];
+        private double _diagGpuMsSum, _diagCpuMsSum;
+        private int _diagGpuSampleCount;
         private bool _configured;
         private bool _flightMessageShown;
-        private bool _runInBackgroundBeforeStart;
+
+        // See ConnectionAddress's own remarks - this cache is what turns a
+        // per-frame NetworkInterface.GetAllNetworkInterfaces() call (very
+        // expensive) into a call made at most once every few seconds.
+        private const float ConnectionAddressRefreshSeconds = 3f;
+        private string _cachedConnectionAddress;
+        private float _nextConnectionAddressRefreshAt = float.NegativeInfinity;
 
         /// <summary>
         /// The single running instance, so external UI code (e.g. the flight
@@ -78,6 +137,21 @@ namespace JunoSecondScreen
         /// local network address was found. Kept short/clean for display in UI,
         /// unlike BuildConnectionInfo()'s log-formatted lines.
         /// </summary>
+        /// <remarks>
+        /// This turned out to be THE cause of a large, reliable FPS drop that
+        /// survived every other fix this mod tried (disabling video capture,
+        /// removing Application.runInBackground, even bypassing the HTTP
+        /// listener entirely) - because none of those touch this property at
+        /// all. The flight panel's address label reads this every UI refresh
+        /// via its UpdateAction, and NetworkUtil.GetLocalAddresses() calls
+        /// NetworkInterface.GetAllNetworkInterfaces(), a notoriously expensive
+        /// .NET API (it queries the OS network stack across every adapter,
+        /// including virtual ones from VPNs/Hyper-V/virtual machines) - fine
+        /// once, ruinous read fresh on every single frame. The address can't
+        /// meaningfully change more than once in a while anyway (network
+        /// adapters don't come and go mid-flight), so it's cached here and
+        /// only recomputed on a slow timer instead.
+        /// </remarks>
         public string ConnectionAddress
         {
             get
@@ -87,20 +161,22 @@ namespace JunoSecondScreen
                     return null;
                 }
 
-                string firstAddress = null;
-                foreach (string address in NetworkUtil.GetLocalAddresses())
+                if (_cachedConnectionAddress == null || Time.unscaledTime >= _nextConnectionAddressRefreshAt)
                 {
-                    firstAddress = address;
-                    break;
+                    _nextConnectionAddressRefreshAt = Time.unscaledTime + ConnectionAddressRefreshSeconds;
+
+                    string firstAddress = null;
+                    foreach (string address in NetworkUtil.GetLocalAddresses())
+                    {
+                        firstAddress = address;
+                        break;
+                    }
+
+                    string query = _configuration.RequireToken ? "/?t=" + _token : "/";
+                    _cachedConnectionAddress = firstAddress != null ? $"http://{firstAddress}:{_server.Port}{query}" : null;
                 }
 
-                if (firstAddress == null)
-                {
-                    return null;
-                }
-
-                string query = _configuration.RequireToken ? "/?t=" + _token : "/";
-                return $"http://{firstAddress}:{_server.Port}{query}";
+                return _cachedConnectionAddress;
             }
         }
 
@@ -130,7 +206,7 @@ namespace JunoSecondScreen
                 {
                     if (_configured)
                     {
-                        Log.Info("Settings changed, restarting the second screen server.");
+                        Log.Info("Settings changed.");
                     }
 
                     _configured = true;
@@ -138,15 +214,113 @@ namespace JunoSecondScreen
                 }
             }
 
-            if (_server == null || !_server.IsRunning)
+            // The flight-panel toggle (the only thing that starts the server -
+            // see ApplyConfiguration/ToggleEnabled) only exists inside the
+            // flight scene's own inspector panel, so a server left running
+            // while the player backs out to the main menu / vehicle builder
+            // has no way to be turned off again until another flight starts -
+            // and there's no craft to serve telemetry for out there anyway.
+            // Force it off the moment the flight scene itself goes away,
+            // same as if the player had used the toggle themselves.
+            if (IsRunning && Game.Instance.FlightScene == null)
+            {
+                Shutdown();
+                Log.Info("Second screen turned off - left the flight scene.");
+            }
+
+            bool serverRunning = _server != null && _server.IsRunning;
+
+            // Real GPU/CPU frame time from the graphics driver itself (D3D11/
+            // D3D12/Metal/Vulkan), independent of anything this mod's own
+            // code does. Captured every frame regardless of serverRunning -
+            // unlike the subsystem timings below, which are meaningless
+            // while the server's off - so the log directly compares mod-on
+            // vs mod-off GPU cost without needing a separate baseline
+            // reading from something else (an FPS overlay, etc.).
+            UnityEngine.FrameTimingManager.CaptureFrameTimings();
+            if (UnityEngine.FrameTimingManager.GetLatestTimings((uint)_diagFrameTimings.Length, _diagFrameTimings) > 0)
+            {
+                _diagGpuMsSum += _diagFrameTimings[0].gpuFrameTime;
+                _diagCpuMsSum += _diagFrameTimings[0].cpuFrameTime;
+                _diagGpuSampleCount++;
+            }
+
+            if (Time.unscaledTime >= _nextUpdateDiagAt)
+            {
+                _nextUpdateDiagAt = Time.unscaledTime + UpdateDiagIntervalSeconds;
+
+                string gpuInfo = _diagGpuSampleCount > 0
+                    ? $"gpuFrameTime={_diagGpuMsSum / _diagGpuSampleCount:F2}ms cpuFrameTime={_diagCpuMsSum / _diagGpuSampleCount:F2}ms (n={_diagGpuSampleCount})"
+                    : "gpuFrameTime=unavailable (FrameTimingManager unsupported here)";
+
+                if (_diagFrameCount > 0)
+                {
+                    double totalMs = _diagCommandsMs + _diagTelemetryMs + _diagMfdMs + _diagAnnounceMs + _diagPlanetMapMs;
+                    Log.Info(
+                        $"[Vizzy perf diag] serverRunning=true, Update() over {_diagFrameCount} frames / {UpdateDiagIntervalSeconds:F0}s: " +
+                        $"commands={_diagCommandsMs:F1}ms telemetry={_diagTelemetryMs:F1}ms mfd={_diagMfdMs:F1}ms " +
+                        $"announce={_diagAnnounceMs:F1}ms planetMap={_diagPlanetMapMs:F1}ms " +
+                        $"| avg/frame={totalMs / _diagFrameCount:F3}ms | {gpuInfo} " +
+                        $"consoleClients={ConsoleClients} mfdTabViewers={Volatile.Read(ref _mfdTabViewers)}");
+                }
+                else
+                {
+                    Log.Info($"[Vizzy perf diag] serverRunning=false | {gpuInfo}");
+                }
+
+                _diagCommandsMs = _diagTelemetryMs = _diagMfdMs = _diagAnnounceMs = _diagPlanetMapMs = 0d;
+                _diagGpuMsSum = _diagCpuMsSum = 0d;
+                _diagGpuSampleCount = 0;
+                _diagFrameCount = 0;
+            }
+
+            if (!serverRunning)
             {
                 return;
             }
 
+            _diagFrameCount++;
+            _diagStopwatch.Restart();
             _commands.Apply();
+            _diagCommandsMs += _diagStopwatch.Elapsed.TotalMilliseconds;
+
+            _diagStopwatch.Restart();
             PublishTelemetry();
+            _diagTelemetryMs += _diagStopwatch.Elapsed.TotalMilliseconds;
+
+            _diagStopwatch.Restart();
             PublishMfd();
+            _diagMfdMs += _diagStopwatch.Elapsed.TotalMilliseconds;
+
+            _diagStopwatch.Restart();
             AnnounceInFlight();
+            _diagAnnounceMs += _diagStopwatch.Elapsed.TotalMilliseconds;
+
+            _diagStopwatch.Restart();
+            RefreshPlanetMap();
+            _diagPlanetMapMs += _diagStopwatch.Elapsed.TotalMilliseconds;
+        }
+
+        // Cheap when the planet hasn't changed (a dictionary lookup, no file
+        // I/O) - see PlanetMapCache.Refresh - so this can run reasonably
+        // often without needing to be gated on ConsoleClients like telemetry.
+        private void RefreshPlanetMap()
+        {
+            if (!_planetMapRequested || Time.unscaledTime < _nextPlanetMapCheckTime)
+            {
+                return;
+            }
+
+            _nextPlanetMapCheckTime = Time.unscaledTime + 3f;
+
+            try
+            {
+                _planetMapCache.Refresh(Game.Instance.FlightScene?.CraftNode?.CraftScript);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"Could not refresh the planet map: {ex.Message}");
+            }
         }
 
         private void OnDestroy()
@@ -162,12 +336,13 @@ namespace JunoSecondScreen
         /* ------------------------------------------------------------- lifecycle */
 
         /// <summary>
-        /// Toggles the server on/off for this session, independent of the mod
-        /// settings screen's Enabled checkbox. Reuses the rest of the last read
-        /// configuration (port, video options, etc.) to start, so this only
-        /// does something useful after the first configuration read. If the
-        /// mod settings' Enabled value changes afterwards, that takes over
-        /// again on the next settings check as usual.
+        /// Turns the server on or off for this session. This is the actual
+        /// day-to-day on/off switch - the mod never auto-starts on its own
+        /// (see ApplyConfiguration), so a player uses this every time they
+        /// actually want the console running, same as any other in-flight
+        /// toggle. Only works at all while the mod settings' Enabled checkbox
+        /// permits it - that checkbox is a master gate, not a "start serving"
+        /// switch of its own.
         /// </summary>
         public void ToggleEnabled()
         {
@@ -176,10 +351,8 @@ namespace JunoSecondScreen
                 Shutdown();
                 Log.Info("Second screen turned off from the flight panel.");
             }
-            else if (_configured)
+            else if (_configured && _configuration.Enabled)
             {
-                Shutdown();
-                _commands.ControlEnabled = _configuration.AllowControl;
                 StartServer(_configuration);
                 Log.Info("Second screen turned on from the flight panel.");
             }
@@ -187,23 +360,44 @@ namespace JunoSecondScreen
 
         private void ApplyConfiguration(ModConfiguration configuration)
         {
-            Shutdown();
             _configuration = configuration;
             _commands.ControlEnabled = configuration.AllowControl;
 
             if (!configuration.Enabled)
             {
+                // The master gate is off - fully stop and stay stopped,
+                // regardless of whatever the flight panel toggle last chose
+                // this session (that toggle only works while this is true).
+                Shutdown();
                 Log.Info("Second screen is switched off in the mod settings.");
                 return;
             }
 
-            StartServer(configuration);
+            // Enabled merely being true does NOT start the server by itself -
+            // ToggleEnabled (the flight panel switch) is the only thing that
+            // does that, on purpose, each session. This just makes starting
+            // it possible. If it's already running (the player turned it on,
+            // then changed some other setting like video quality), restart it
+            // with the new configuration rather than leaving it running with
+            // stale settings; otherwise leave it off.
+            if (IsRunning)
+            {
+                Shutdown();
+                StartServer(configuration);
+                Log.Info("Restarting the second screen server with the new settings.");
+            }
         }
 
         // Starts the HTTP server unconditionally, ignoring configuration.Enabled
         // (the caller decides whether that gate applies).
         private void StartServer(ModConfiguration configuration)
         {
+            // Force ConnectionAddress to recompute on next read rather than
+            // reusing a value cached from a previous run (e.g. a different
+            // port after a settings change).
+            _cachedConnectionAddress = null;
+            _nextConnectionAddressRefreshAt = float.NegativeInfinity;
+
             _server = new HttpServer(HandleRequest);
             if (!_server.Start(configuration.Port))
             {
@@ -211,17 +405,15 @@ namespace JunoSecondScreen
                 return;
             }
 
-            // Unity throttles/pauses the main loop - including every
-            // coroutine, which is what the whole capture pipeline (target
-            // switching, camera rendering, frame encoding) runs on - once the
-            // game window loses focus, unless the app opts out of that. The
-            // whole point of a second screen is being watched from a tablet/
-            // browser while the player may not have the game window focused,
-            // so that default would silently stall every feed each time.
-            // Restored on Shutdown() rather than left on permanently, so this
-            // mod only changes that behavior while it's actually running.
-            _runInBackgroundBeforeStart = Application.runInBackground;
-            Application.runInBackground = true;
+            // This used to force Application.runInBackground on (so telemetry/
+            // video kept flowing while the player was alt-tabbed watching the
+            // tablet instead), but that's gone now: forcing it was measured
+            // to cost real FPS even while the game window WAS focused, and -
+            // separately - the player explicitly wants the game's own alt-tab
+            // pause behavior left alone rather than overridden by this mod.
+            // The tradeoff is accepted: the console will stop updating while
+            // the game is alt-tabbed away, same as if this mod didn't touch
+            // the setting at all.
 
             if (configuration.VideoEnabled)
             {
@@ -267,16 +459,6 @@ namespace JunoSecondScreen
         {
             StopAllCoroutines();
 
-            // Only restore if we actually forced it in StartServer (_server
-            // is null here on e.g. the very first configuration read, before
-            // this mod has ever started anything - restoring an unset,
-            // default-false _runInBackgroundBeforeStart in that case would
-            // incorrectly force the game's own setting off).
-            if (_server != null)
-            {
-                Application.runInBackground = _runInBackgroundBeforeStart;
-            }
-
             _server?.Stop();
             _server = null;
 
@@ -314,7 +496,7 @@ namespace JunoSecondScreen
             string json;
             try
             {
-                json = _collector.Build();
+                json = _collector.Build(_planetMapCache.MapRotationAngleDeg, Volatile.Read(ref _orbitTabViewers) > 0);
             }
             catch (Exception ex)
             {
@@ -344,9 +526,17 @@ namespace JunoSecondScreen
 
         /* -------------------------------------------------------------------- mfd */
 
+        // How long to hold off the widget-tree walk after an MFD click - long
+        // enough to comfortably clear whatever frame(s) a page-switch takes
+        // to finish rebuilding its widgets, short enough to stay unnoticeable
+        // given MfdIntervalSeconds itself is already 250ms.
+        private const float MfdClickSettleSeconds = 0.2f;
+
         private void PublishMfd()
         {
-            if (ConsoleClients == 0 || Time.unscaledTime < _nextMfdTime)
+            if (ConsoleClients == 0
+                || Time.unscaledTime < _nextMfdTime
+                || Time.unscaledTime - _commands.LastMfdClickAt < MfdClickSettleSeconds)
             {
                 return;
             }
@@ -362,7 +552,8 @@ namespace JunoSecondScreen
                     craft,
                     _mfdCapture?.FrameVersion ?? 0,
                     _viewCapture?.FrameVersion ?? 0,
-                    _externalViewCapture?.FrameVersion ?? 0);
+                    _externalViewCapture?.FrameVersion ?? 0,
+                    Volatile.Read(ref _mfdTabViewers) > 0);
             }
             catch (Exception ex)
             {
@@ -473,6 +664,10 @@ namespace JunoSecondScreen
                     ServeExternalView(request, connection);
                     return;
 
+                case "/planetmap.png":
+                    ServePlanetMap(connection);
+                    return;
+
                 case "/api/status":
                     connection.RespondText(200, "application/json; charset=utf-8", BuildStatusJson());
                     return;
@@ -537,6 +732,48 @@ namespace JunoSecondScreen
             }
         }
 
+        /// <summary>
+        /// Tracks this one connection's MFD-tab/Orbit-tab visibility so
+        /// PublishMfd/PublishTelemetry can skip their expensive per-tab work
+        /// while nobody's looking - see _mfdTabViewers/_orbitTabViewers.
+        /// Distinct from HandleStreamLifecycleCommand because it needs to
+        /// remember state across messages (to know whether to undo it if the
+        /// connection drops without ever sending "on":false), not just react
+        /// to a single one-shot action.
+        /// </summary>
+        private bool TryHandleTabActiveCommand(string message, ref bool mfdTabActiveForConnection, ref bool orbitTabActiveForConnection)
+        {
+            if (!(JsonReader.Parse(message) is Dictionary<string, object> command))
+            {
+                return false;
+            }
+
+            bool active = JsonReader.GetBool(command, "on");
+            switch (JsonReader.GetString(command, "cmd"))
+            {
+                case "mfdTabActive":
+                    if (active != mfdTabActiveForConnection)
+                    {
+                        mfdTabActiveForConnection = active;
+                        Interlocked.Add(ref _mfdTabViewers, active ? 1 : -1);
+                    }
+
+                    return true;
+
+                case "orbitTabActive":
+                    if (active != orbitTabActiveForConnection)
+                    {
+                        orbitTabActiveForConnection = active;
+                        Interlocked.Add(ref _orbitTabViewers, active ? 1 : -1);
+                    }
+
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
         private void ServeWebSocket(HttpRequest request, HttpConnection connection)
         {
             if (!request.IsWebSocketUpgrade())
@@ -570,6 +807,8 @@ namespace JunoSecondScreen
             };
             pushMfdThread.Start();
 
+            bool mfdTabActiveForConnection = false;
+            bool orbitTabActiveForConnection = false;
             try
             {
                 while (true)
@@ -580,14 +819,35 @@ namespace JunoSecondScreen
                         break;
                     }
 
-                    if (!HandleStreamLifecycleCommand(message))
+                    if (HandleStreamLifecycleCommand(message))
                     {
-                        _commands.Enqueue(message);
+                        continue;
                     }
+
+                    if (TryHandleTabActiveCommand(message, ref mfdTabActiveForConnection, ref orbitTabActiveForConnection))
+                    {
+                        continue;
+                    }
+
+                    _commands.Enqueue(message);
                 }
             }
             finally
             {
+                // Undoes this connection's own contribution regardless of how
+                // it ends - a dropped connection (network loss, closed tab)
+                // never gets the chance to send "...TabActive":false itself,
+                // and without this the counters would only ever go up.
+                if (mfdTabActiveForConnection)
+                {
+                    Interlocked.Decrement(ref _mfdTabViewers);
+                }
+
+                if (orbitTabActiveForConnection)
+                {
+                    Interlocked.Decrement(ref _orbitTabViewers);
+                }
+
                 socket.Close();
                 pushThread.Join(500);
                 pushMfdThread.Join(500);
@@ -788,6 +1048,27 @@ namespace JunoSecondScreen
             }
         }
 
+        // A plain static-image response, not a stream: the map only changes
+        // when the orbited planet does, which PlanetMapCache already only
+        // re-resolves periodically on the main thread - see its own remarks
+        // for why the actual byte[] hand-off has to work that way.
+        private void ServePlanetMap(HttpConnection connection)
+        {
+            _planetMapRequested = true;
+
+            byte[] png = _planetMapCache.GetPng();
+            if (png == null)
+            {
+                connection.RespondText(503, "text/plain; charset=utf-8", "No planet map available yet.");
+                return;
+            }
+
+            connection.Respond(200, "image/png", png, new[]
+            {
+                new KeyValuePair<string, string>("Cache-Control", "no-cache"),
+            });
+        }
+
         /* -------------------------------------------------------------------- auth */
 
         private bool IsAuthorized(HttpRequest request)
@@ -921,7 +1202,7 @@ namespace JunoSecondScreen
         {
             var json = new JsonWriter(256);
             json.StartObject();
-            json.Prop("mod", "Juno Second Screen");
+            json.Prop("mod", "Juno Tether");
             json.Prop("port", _server?.Port ?? 0);
             json.Prop("clients", ConsoleClients);
             json.Prop("control", _configuration.AllowControl);
@@ -934,12 +1215,12 @@ namespace JunoSecondScreen
         private const string UnauthorizedPage =
             "<!DOCTYPE html><html><head><meta charset=\"utf-8\">" +
             "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
-            "<title>Juno Second Screen</title></head>" +
+            "<title>Juno Tether</title></head>" +
             "<body style=\"font-family:-apple-system,sans-serif;background:#070b12;color:#d8e3f2;padding:32px\">" +
             "<h1>Access token required</h1>" +
             "<p>Open the address printed in Juno's log, or shown on screen when a flight starts. " +
             "It looks like <code>http://192.168.x.x:8088/?t=abcd1234</code>.</p>" +
-            "<p>You can turn the token off under <b>Settings &rarr; Mods &rarr; Second Screen</b>.</p>" +
+            "<p>You can turn the token off under <b>Settings &rarr; Mods &rarr; Juno Tether</b>.</p>" +
             "</body></html>";
 
         /// <summary>

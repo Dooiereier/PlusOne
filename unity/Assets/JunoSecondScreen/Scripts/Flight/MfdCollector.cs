@@ -53,7 +53,17 @@ namespace JunoSecondScreen.Flight
         /// a genuinely stalled feed (this stops moving) apart from an idle one
         /// (nothing selected/watched).
         /// </param>
-        public string Build(ICraftScript craft, int mfdFrameVersion, int mainViewFrameVersion, int externalViewFrameVersion)
+        /// <param name="includeWidgets">
+        /// Whether to walk every MFD's widget tree at all. This recursive
+        /// walk (WriteChildren/WriteWidget below) does 2-3 GetComponent calls
+        /// per node across the whole canvas hierarchy of every MFD on the
+        /// craft - on a complex MFD that's a real cost, and it was previously
+        /// paid on every call regardless of whether any connected client had
+        /// the MFD tab open to look at it. The frame-version counters below
+        /// still need to go out unconditionally either way - the View tab's
+        /// own stale-feed detection reads them from this same message.
+        /// </param>
+        public string Build(ICraftScript craft, int mfdFrameVersion, int mainViewFrameVersion, int externalViewFrameVersion, bool includeWidgets)
         {
             _json.Reset();
             _json.StartObject();
@@ -63,18 +73,21 @@ namespace JunoSecondScreen.Flight
             _json.Prop("externalViewFrameVersion", externalViewFrameVersion);
 
             _json.StartArray("mfds");
-            var parts = craft?.Data?.Assembly?.Parts;
-            if (parts != null)
+            if (includeWidgets)
             {
-                foreach (var part in parts)
+                var parts = craft?.Data?.Assembly?.Parts;
+                if (parts != null)
                 {
-                    var mfdData = part.GetModifier<MfdData>();
-                    if (mfdData?.Script?.Canvas == null)
+                    foreach (var part in parts)
                     {
-                        continue;
-                    }
+                        var mfdData = part.GetModifier<MfdData>();
+                        if (mfdData?.Script?.Canvas == null)
+                        {
+                            continue;
+                        }
 
-                    WriteMfd(part.Name, mfdData.Script.Canvas.transform);
+                        WriteMfd(part.Name, mfdData.Script.Canvas.transform);
+                    }
                 }
             }
 

@@ -1,5 +1,6 @@
 namespace JunoSecondScreen
 {
+    using JunoSecondScreen.Flight;
     using JunoSecondScreen.Util;
     using ModApi.Mods;
     using UnityEngine;
@@ -33,14 +34,16 @@ namespace JunoSecondScreen
                 return;
             }
 
-            _serviceObject = new GameObject("Second Screen Service");
+            _serviceObject = new GameObject("Juno Tether Service");
             Object.DontDestroyOnLoad(_serviceObject);
             _serviceObject.AddComponent<SecondScreenService>();
 
             _harmony = new HarmonyLib.Harmony("com.dooiereier.junosecondscreen");
             _harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 
-            Log.Info("Second Screen mod initialized.");
+            FlightInfoPanelIntegration.Register();
+
+            Log.Info("Juno Tether mod initialized.");
         }
     }
 }

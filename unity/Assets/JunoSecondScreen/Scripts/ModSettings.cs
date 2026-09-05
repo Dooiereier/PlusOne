@@ -16,7 +16,7 @@ namespace JunoSecondScreen
         /// Initializes a new instance of the <see cref="ModSettings"/> class.
         /// </summary>
         public ModSettings()
-            : base("Second Screen")
+            : base("Juno Tether")
         {
         }
 
@@ -75,7 +75,7 @@ namespace JunoSecondScreen
         protected override void InitializeSettings()
         {
             this.Enabled = this.CreateBool("Enabled")
-                .SetDescription("Serve the tablet console over your local network. The address is written to the log and shown when a flight starts.")
+                .SetDescription("Allow the tablet console to be turned on. This doesn't start it by itself - use the Enabled switch in the Juno Tether flight panel group each flight to actually turn it on and off.")
                 .SetDefault(false);
 
             this.Port = this.CreateNumeric<float>("Port", 1024f, 65535f, 1f)
@@ -97,7 +97,7 @@ namespace JunoSecondScreen
                 .SetDefault(15f);
 
             this.VideoEnabled = this.CreateBool("Enable video feed")
-                .SetDescription("Allow the console's View tab to stream the game window. The feed only costs performance while a tablet is watching it.")
+                .SetDescription("Lets the console's View/MFD/Cameras tabs stream video of the game, MFD screens and craft cameras. Costs nothing unless a tablet is actively watching a feed, so there's no performance reason to turn this off - switch it off only if you'd rather guarantee none of that can ever be captured over the network at all, e.g. on a network you don't fully trust.")
                 .SetDefault(true);
 
             this.VideoWidth = this.CreateNumeric<float>("Video width", 320f, 1280f, 32f)

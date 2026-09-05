@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Juno Second Screen</title>
+<title>Juno Tether</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -36,16 +36,18 @@
 </header>
 
 <main id="main">
+  <div class="signallost globalsignal" id="globalSignalLost" hidden>LOSS OF SIGNAL</div>
 
   <!-- ---------------------------------------------------------------- Flight -->
   <section class="panel-group" data-panel="flight">
     <div class="panel navpanel">
-      <canvas id="navball" width="440" height="440"></canvas>
-      <div class="attitude">
-        <div class="pair"><label>PITCH</label><span id="atPitch">0°</span></div>
-        <div class="pair"><label>HDG</label><span id="atHeading">0°</span></div>
-        <div class="pair"><label>ROLL</label><span id="atRoll">0°</span></div>
-        <div class="pair"><label>AoA</label><span id="atAoa">0°</span></div>
+      <div class="pair navroll"><label>ROLL</label><span id="atRoll">0°</span></div>
+      <div class="navballrow">
+        <canvas id="navball" width="440" height="440"></canvas>
+        <div class="pair navpitch"><label>PITCH</label><span id="atPitch">0°</span></div>
+      </div>
+      <div class="navbottom">
+        <div class="pair navyaw"><label>YAW</label><span id="atHeading">0°</span></div>
       </div>
       <div class="navmodes">
         <button class="chip" data-lock="prograde">PRO</button>
@@ -62,7 +64,7 @@
         <span id="altAsl">—</span>
       </div>
       <div class="bignum">
-        <label>SURFACE SPEED</label>
+        <label>SURFACE VELOCITY</label>
         <span id="surfaceSpeed">—</span>
       </div>
       <div class="grid2">
@@ -103,13 +105,22 @@
         <div class="pair"><label>LONGITUDE</label><span id="lon">—</span></div>
       </div>
     </div>
+
+    <div class="panel timewarp">
+      <div class="bignum">
+        <label>TIME WARP</label>
+        <span id="warpRate">1×</span>
+      </div>
+      <div class="warpbuttons">
+        <button class="chip" id="warpDown">−</button>
+        <button class="chip" id="warpPause">PAUSE</button>
+        <button class="chip" id="warpUp">+</button>
+      </div>
+    </div>
   </section>
 
   <!-- ----------------------------------------------------------------- Orbit -->
   <section class="panel-group" data-panel="orbit" hidden>
-    <div class="panel orbitplot">
-      <canvas id="orbitCanvas" width="620" height="620"></canvas>
-    </div>
     <div class="panel readouts">
       <div class="bignum"><label>APOAPSIS</label><span id="apoapsis">—</span></div>
       <div class="bignum"><label>PERIAPSIS</label><span id="periapsis">—</span></div>
@@ -120,6 +131,15 @@
         <div class="pair"><label>INCLINATION</label><span id="inc">—</span></div>
         <div class="pair"><label>PERIOD</label><span id="period">—</span></div>
         <div class="pair"><label>BODY</label><span id="orbitBody">—</span></div>
+        <div class="pair"><label>LAT</label><span id="mapLat">—</span></div>
+        <div class="pair"><label>LON</label><span id="mapLon">—</span></div>
+      </div>
+    </div>
+    <div class="panel orbitplot">
+      <div class="planetmap">
+        <img id="planetMapImg" alt="">
+        <canvas id="groundTrackCanvas" width="1024" height="512"></canvas>
+        <div id="planetMapEmpty" class="mapempty" hidden>No map data yet</div>
       </div>
     </div>
   </section>
