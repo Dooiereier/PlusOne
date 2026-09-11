@@ -1,6 +1,6 @@
 {
-  "name": "Juno Tether",
-  "short_name": "Tether",
+  "name": "PlusOne",
+  "short_name": "PlusOne",
   "start_url": "./",
   "display": "standalone",
   "orientation": "landscape",

@@ -8,7 +8,7 @@ namespace JunoSecondScreen.Flight
     using UnityEngine;
 
     /// <summary>
-    /// Adds a "Juno Tether" section directly into the game's own Flight Info
+    /// Adds a "PlusOne" section directly into the game's own Flight Info
     /// panel, the same way built-in sections like "Fuel" and "Velocity" are
     /// built (InspectorModel/GroupModel).
     ///
@@ -48,13 +48,13 @@ namespace JunoSecondScreen.Flight
             }
             catch (Exception ex)
             {
-                Log.Warn("FlightInfoPanelIntegration: failed to add the Juno Tether group: " + ex.Message);
+                Log.Warn("FlightInfoPanelIntegration: failed to add the PlusOne group: " + ex.Message);
             }
         }
 
         private static GroupModel BuildGroup()
         {
-            var group = new GroupModel("Juno Tether", null) { Collapsed = true };
+            var group = new GroupModel("PlusOne", null) { Collapsed = true };
 
             group.Add(new ToggleModel(
                 "Enabled",

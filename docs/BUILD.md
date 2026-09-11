@@ -20,12 +20,12 @@
    console errors you might see at this point are almost always a missing Mod
    Tools import, not the mod code.
 5. Open `ModData.asset` in the inspector and check that `_assemblies` lists
-   `JunoSecondScreen.dll`. If the asset shows a missing script, delete it and
+   `PlusOne.dll`. If the asset shows a missing script, delete it and
    create a fresh one from the Mod Tools menu, then fill in the same fields (the
    values are listed in the file, which is plain YAML).
 6. Build with the Mod Tools menu. The package lands in `ModAssetBundles/` as
-   `Second Screen.sr2-mod`.
-7. `Tools → Second Screen → Deploy Built Mod To Juno` copies it into the game's
+   `PlusOne.sr2-mod`.
+7. `Tools → PlusOne → Deploy Built Mod To Juno` copies it into the game's
    mods folder. Juno must be closed, since it holds the file open.
 
 ## Changing the console

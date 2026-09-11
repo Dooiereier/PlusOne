@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: ModData
   m_EditorClassIdentifier: 
   _assemblies:
-  - JunoSecondScreen.dll
+  - PlusOne.dll
   _author: Dooiereier
   _description: "Turn an iPad \u2014 or any tablet, phone or laptop with a browser
-    \u2014 into a second screen.\n\n<color=green>Restart<color=white> JNO after enabling
-    this mod when also using Flight Info+!\n\n<color=red><size=150%>Harmony required!"
+    \u2014 into a second screen.\n\nRestart JNO after enabling this mod when also
+    using <color=green>Flight Info+!\n\n<color=red>Harmony required!"
   _loadPriority: 1000
-  _name: Juno Tether
+  _name: PlusOne
   _otherAssets: []
   _prefabs: []
   _steamDescription: 

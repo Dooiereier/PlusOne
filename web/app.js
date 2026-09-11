@@ -1,5 +1,5 @@
 /*
- * Juno Tether - tablet console client.
+ * PlusOne - tablet console client.
  *
  * Talks to the in-game mod over a single WebSocket: telemetry frames come down,
  * control commands go up. The MJPEG view feed is a separate <img> connection so
@@ -590,6 +590,18 @@
   }
 
   function renderMfdList(mfds) {
+    // The server only walks MFD widget trees (expensive) while this client
+    // has the MFD tab open - every "mfd" message received on any other tab
+    // carries an empty mfds array on purpose, not because the craft has no
+    // MFDs. Treating that as real data here would immediately wipe
+    // mfdSelectedPart (nothing in an empty list "matches" it) every single
+    // time one of those off-tab messages arrived, which is constantly -
+    // so by the time the player switched back, the remembered selection was
+    // already gone and it silently fell back to the first MFD every time.
+    if (!mfdTabActive) {
+      return;
+    }
+
     mfdList = mfds;
 
     var signature = mfds.map(function (m) { return m.part; }).join('|');

@@ -7,7 +7,7 @@ namespace JunoSecondScreen.Util
     /// </summary>
     internal static class Log
     {
-        private const string Prefix = "[Juno Tether] ";
+        private const string Prefix = "[PlusOne] ";
 
         public static void Info(string message)
         {

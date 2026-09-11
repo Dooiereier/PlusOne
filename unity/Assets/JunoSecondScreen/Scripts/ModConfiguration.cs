@@ -10,7 +10,6 @@ namespace JunoSecondScreen
     internal readonly struct ModConfiguration : IEquatable<ModConfiguration>
     {
         private ModConfiguration(
-            bool enabled,
             int port,
             bool requireToken,
             bool allowControl,
@@ -20,7 +19,6 @@ namespace JunoSecondScreen
             int videoFps,
             int videoQuality)
         {
-            Enabled = enabled;
             Port = port;
             RequireToken = requireToken;
             AllowControl = allowControl;
@@ -30,8 +28,6 @@ namespace JunoSecondScreen
             VideoFps = videoFps;
             VideoQuality = videoQuality;
         }
-
-        public bool Enabled { get; }
 
         public int Port { get; }
 
@@ -75,7 +71,6 @@ namespace JunoSecondScreen
         {
             ModSettings settings = ModSettings.Instance;
             return new ModConfiguration(
-                settings.Enabled.Value,
                 Mathf.RoundToInt(settings.Port.Value),
                 settings.RequireToken.Value,
                 settings.AllowControl.Value,
@@ -88,8 +83,7 @@ namespace JunoSecondScreen
 
         public bool Equals(ModConfiguration other)
         {
-            return Enabled == other.Enabled
-                && Port == other.Port
+            return Port == other.Port
                 && RequireToken == other.RequireToken
                 && AllowControl == other.AllowControl
                 && TelemetryHz == other.TelemetryHz
@@ -106,7 +100,7 @@ namespace JunoSecondScreen
 
         public override int GetHashCode()
         {
-            int hash = Enabled ? 17 : 19;
+            int hash = 17;
             hash = (hash * 31) + Port;
             hash = (hash * 31) + (RequireToken ? 1 : 0);
             hash = (hash * 31) + (AllowControl ? 1 : 0);

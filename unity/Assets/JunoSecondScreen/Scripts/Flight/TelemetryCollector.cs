@@ -29,15 +29,6 @@ namespace JunoSecondScreen.Flight
         private readonly JsonWriter _json = new JsonWriter(8192);
         private readonly List<string> _groupNames = new List<string>();
         private float _groupNamesRefreshedAt = float.NegativeInfinity;
-        private float _nextTrajectoryDiagAt = float.NegativeInfinity;
-        private float _nextLongitudeDiagAt = float.NegativeInfinity;
-
-        // How often the diagnostic logs below may repeat - once-ever made a
-        // diagnostic useless for anything after the first log of a flight
-        // (an already-fired diagnostic stayed silent for the rest of the
-        // session, including exactly the later, in-orbit state that needed
-        // checking). A slow repeat keeps them useful without spamming.
-        private const float DiagRepeatSeconds = 15f;
 
         /// <summary>
         /// Builds one telemetry frame.
@@ -144,14 +135,6 @@ namespace JunoSecondScreen.Flight
 
                 _json.Prop("latitude", latitude * Mathf.Rad2Deg);
                 _json.Prop("longitude", longitudeDeg);
-
-                if (Time.unscaledTime >= _nextLongitudeDiagAt)
-                {
-                    _nextLongitudeDiagAt = Time.unscaledTime + DiagRepeatSeconds;
-                    Log.Info(
-                        $"[Vizzy longitude diag] rawLon={rawLongitude * Mathf.Rad2Deg:F1} rotationAngle={rotationDeg:F1} " +
-                        $"correctedLon={longitudeDeg:F1}");
-                }
             }
             else
             {
@@ -276,7 +259,6 @@ namespace JunoSecondScreen.Flight
             if (planetNode == null || planetData == null)
             {
                 _trajectoryJson.Prop("trajectoryAvailable", false);
-                LogTrajectoryDiagOnce("[Vizzy trajectory diag] unavailable: planetNode or planetData is null");
                 return FinishTrajectoryFragment();
             }
 
@@ -295,7 +277,6 @@ namespace JunoSecondScreen.Flight
                 // the vis-viva equation, describing an "orbit" whose
                 // periapsis is deep inside the planet - meaningless to draw).
                 _trajectoryJson.Prop("trajectoryAvailable", false);
-                LogTrajectoryDiagOnce($"[Vizzy trajectory diag] unavailable: mu={mu:F0} rMag={rMag:F0} planetRadius={planetData.Radius:F0}");
                 return FinishTrajectoryFragment();
             }
 
@@ -317,7 +298,6 @@ namespace JunoSecondScreen.Flight
             if (System.Math.Abs(a) < 1d)
             {
                 _trajectoryJson.Prop("trajectoryAvailable", false);
-                LogTrajectoryDiagOnce($"[Vizzy trajectory diag] unavailable: e={e:F3} a={a:F0}");
                 return FinishTrajectoryFragment();
             }
 
@@ -326,9 +306,6 @@ namespace JunoSecondScreen.Flight
             if (orbitNode == null || currentPoint == null)
             {
                 _trajectoryJson.Prop("trajectoryAvailable", false);
-                LogTrajectoryDiagOnce(
-                    "[Vizzy trajectory diag] unavailable: craft.CraftNode is not an IOrbitNode (or GetCurrentPoint() " +
-                    "returned null) - the GetPointAtTime approach needs this cast to succeed.");
                 return FinishTrajectoryFragment();
             }
 
@@ -360,13 +337,8 @@ namespace JunoSecondScreen.Flight
             }
 
             _trajectoryJson.Prop("trajectoryAvailable", true);
-            int pastWritten = WriteGroundTrack("trajPast", orbitNode, nowTime, fromSec, 0d, hyperbolic ? 180 : 140, rotationNowDeg, angularVelDeg);
-            int futureWritten = WriteGroundTrack("trajFuture", orbitNode, nowTime, 0d, toSec, hyperbolic ? 520 : 400, rotationNowDeg, angularVelDeg);
-
-            LogTrajectoryDiagOnce(
-                $"[Vizzy trajectory diag] using GetPointAtTime: hyperbolic={hyperbolic} e={e:F3} a={a:F0} " +
-                $"window=[{fromSec:F0}s,{toSec:F0}s] nowTime={nowTime:F1} rotationNow={rotationNowDeg:F1} " +
-                $"pastPoints={pastWritten} futurePoints={futureWritten}");
+            WriteGroundTrack("trajPast", orbitNode, nowTime, fromSec, 0d, hyperbolic ? 180 : 140, rotationNowDeg, angularVelDeg);
+            WriteGroundTrack("trajFuture", orbitNode, nowTime, 0d, toSec, hyperbolic ? 520 : 400, rotationNowDeg, angularVelDeg);
 
             return FinishTrajectoryFragment();
         }
@@ -385,14 +357,10 @@ namespace JunoSecondScreen.Flight
 
         // Writes a flat [lat, lon, lat, lon, ...] array (degrees) for dt in
         // [fromSec, toSec] relative to nowTime, sampled at `steps`+1 points.
-        // Returns how many points were actually written, for the diagnostic
-        // log - if this comes back 0, GetPointAtTime itself is the problem,
-        // not the lat/lon conversion.
-        private int WriteGroundTrack(string key, IOrbitNode orbitNode, double nowTime, double fromSec, double toSec, int steps, double rotationNowDeg, double angularVelDeg)
+        private void WriteGroundTrack(string key, IOrbitNode orbitNode, double nowTime, double fromSec, double toSec, int steps, double rotationNowDeg, double angularVelDeg)
         {
             _trajectoryJson.StartArray(key);
 
-            int written = 0;
             for (int i = 0; i <= steps; i++)
             {
                 double dt = fromSec + (toSec - fromSec) * (i / (double)steps);
@@ -433,30 +401,9 @@ namespace JunoSecondScreen.Flight
 
                 _trajectoryJson.Value(lat);
                 _trajectoryJson.Value(lon);
-                written++;
             }
 
             _trajectoryJson.EndArray();
-            return written;
-        }
-
-        // Throttled, not once per frame (this runs at console refresh rate)
-        // - just enough to confirm in the Player log whether the element
-        // derivation succeeded and see the raw numbers, without spamming it
-        // every tick. Repeats every DiagRepeatSeconds rather than only ever
-        // firing once, so it stays useful later in a flight too (a strictly
-        // one-shot version of this previously went silent right after
-        // launch, well before reaching the in-orbit state that needed
-        // checking).
-        private void LogTrajectoryDiagOnce(string message)
-        {
-            if (Time.unscaledTime < _nextTrajectoryDiagAt)
-            {
-                return;
-            }
-
-            _nextTrajectoryDiagAt = Time.unscaledTime + DiagRepeatSeconds;
-            Log.Info(message);
         }
 
         private static Vector3d Cross(Vector3d a, Vector3d b)

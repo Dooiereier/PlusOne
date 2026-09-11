@@ -49,11 +49,11 @@ namespace JunoSecondScreen.Web
 <html lang=""en"">
 <head>
 <meta charset=""utf-8"">
-<title>Juno Tether</title>
+<title>PlusOne</title>
 <meta name=""viewport"" content=""width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"">
 <meta name=""apple-mobile-web-app-capable"" content=""yes"">
 <meta name=""apple-mobile-web-app-status-bar-style"" content=""black-translucent"">
-<meta name=""apple-mobile-web-app-title"" content=""Juno"">
+<meta name=""apple-mobile-web-app-title"" content=""PlusOne"">
 <meta name=""theme-color"" content=""#070b12"">
 <link rel=""manifest"" href=""manifest.webmanifest"">
 <link rel=""icon"" href=""icon.png"">
@@ -148,6 +148,7 @@ namespace JunoSecondScreen.Web
         <div class=""pair""><label>AIR PRESS</label><span id=""airPressure"">—</span></div>
         <div class=""pair""><label>AIR DENS</label><span id=""airDensity"">—</span></div>
         <div class=""pair""><label>DYN PRESS</label><span id=""dynPressure"">—</span></div>
+        <div class=""pair""></div>
         <div class=""pair""><label>LATITUDE</label><span id=""lat"">—</span></div>
         <div class=""pair""><label>LONGITUDE</label><span id=""lon"">—</span></div>
       </div>
@@ -256,11 +257,11 @@ namespace JunoSecondScreen.Web
 <html lang=""en"">
 <head>
 <meta charset=""utf-8"">
-<title>Juno Tether</title>
+<title>PlusOne</title>
 <meta name=""viewport"" content=""width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"">
 <meta name=""apple-mobile-web-app-capable"" content=""yes"">
 <meta name=""apple-mobile-web-app-status-bar-style"" content=""black-translucent"">
-<meta name=""apple-mobile-web-app-title"" content=""Juno"">
+<meta name=""apple-mobile-web-app-title"" content=""PlusOne"">
 <meta name=""theme-color"" content=""#070b12"">
 <link rel=""manifest"" href=""manifest.webmanifest"">
 <link rel=""icon"" href=""icon.png"">
@@ -355,6 +356,7 @@ namespace JunoSecondScreen.Web
         <div class=""pair""><label>AIR PRESS</label><span id=""airPressure"">—</span></div>
         <div class=""pair""><label>AIR DENS</label><span id=""airDensity"">—</span></div>
         <div class=""pair""><label>DYN PRESS</label><span id=""dynPressure"">—</span></div>
+        <div class=""pair""></div>
         <div class=""pair""><label>LATITUDE</label><span id=""lat"">—</span></div>
         <div class=""pair""><label>LONGITUDE</label><span id=""lon"">—</span></div>
       </div>
@@ -909,7 +911,7 @@ body {
             ContentTypes["/app.css"] = "text/css; charset=utf-8";
 
             Content["/app.js"] = Encoding.UTF8.GetBytes(@"/*
- * Juno Tether - tablet console client.
+ * PlusOne - tablet console client.
  *
  * Talks to the in-game mod over a single WebSocket: telemetry frames come down,
  * control commands go up. The MJPEG view feed is a separate <img> connection so
@@ -1500,6 +1502,18 @@ body {
   }
 
   function renderMfdList(mfds) {
+    // The server only walks MFD widget trees (expensive) while this client
+    // has the MFD tab open - every ""mfd"" message received on any other tab
+    // carries an empty mfds array on purpose, not because the craft has no
+    // MFDs. Treating that as real data here would immediately wipe
+    // mfdSelectedPart (nothing in an empty list ""matches"" it) every single
+    // time one of those off-tab messages arrived, which is constantly -
+    // so by the time the player switched back, the remembered selection was
+    // already gone and it silently fell back to the first MFD every time.
+    if (!mfdTabActive) {
+      return;
+    }
+
     mfdList = mfds;
 
     var signature = mfds.map(function (m) { return m.part; }).join('|');
@@ -2001,8 +2015,8 @@ body {
             ContentTypes["/app.js"] = "application/javascript; charset=utf-8";
 
             Content["/manifest.webmanifest"] = Encoding.UTF8.GetBytes(@"{
-  ""name"": ""Juno Tether"",
-  ""short_name"": ""Tether"",
+  ""name"": ""PlusOne"",
+  ""short_name"": ""PlusOne"",
   ""start_url"": ""./"",
   ""display"": ""standalone"",
   ""orientation"": ""landscape"",

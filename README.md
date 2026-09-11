@@ -1,66 +1,80 @@
-# Juno Second Screen
+# PlusOne
 
 Turn an iPad — or any tablet, phone or laptop with a browser — into a second
-screen for **Juno: New Origins**.
+screen for **Juno: New Origins**: a full flight console, an orbit map, an MFD
+mirror you can actually tap, and a live craft-camera feed.
 
 The mod runs a small web server inside the game. Point Safari at your PC's
-address and the tablet becomes a touch flight console: navball, gauges, orbit
-plot, resource bars, staging, throttle and activation groups, plus an optional
-live view of the game window. No App Store app, no cables, no extra software on
-the iPad.
+address and the tablet becomes a touch console: navball, gauges, orbit ground
+track, MFD mirroring, resource bars, staging, throttle, activation groups and
+time warp, plus an optional live view of the game window or any craft camera.
+No App Store app, no cables, no extra software on the iPad.
 
 ```
    PC running Juno                     iPad on the same Wi-Fi
   ┌──────────────────┐                ┌──────────────────────┐
   │ game + mod       │  telemetry ──▶ │  Safari              │
   │  HTTP :8088      │                │   navball, gauges,   │
-  │  WebSocket /ws   │ ◀── commands   │   staging, throttle  │
-  │  MJPEG /stream   │  ──── video ─▶ │   live view          │
+  │  WebSocket /ws   │ ◀── commands   │   MFD, staging,      │
+  │  MJPEG streams   │  ──── video ─▶ │   throttle, cameras  │
   └──────────────────┘                └──────────────────────┘
 ```
 
 ## What it gives you
 
-**Flight tab** — navball with prograde/retrograde/target markers and a heading
-tape, altitude ASL/AGL, surface/orbital/vertical/horizontal speed, g-force,
-Mach, apoapsis/periapsis with time to each, TWR, stage ΔV, thrust, mass, Isp,
-remaining burn time, engine and stage counts, atmospheric pressure and density,
-latitude/longitude, and fuel/monopropellant/battery bars.
+**Flight tab** — navball with prograde/retrograde/target markers and
+independent pitch/roll/yaw readouts, altitude ASL/AGL, surface/orbital/
+vertical/horizontal speed, g-force, Mach, apoapsis/periapsis with time to
+each, TWR, stage ΔV, thrust, mass, Isp, remaining burn time, engine and stage
+counts, atmospheric pressure and density, latitude/longitude,
+fuel/monopropellant/battery bars, and time warp controls (rate readout,
+up/down/pause).
 
-**Orbit tab** — apoapsis, periapsis, time to each, eccentricity, inclination and
-period, drawn as a live orbit plot with the planet, the edge of the atmosphere
-and your position on the conic.
+**Orbit tab** — apoapsis, periapsis, time to each, eccentricity, inclination,
+period and orbited body, drawn on a live equirectangular map of the planet
+with your past and future ground track traced on it and your current
+position marked.
 
-**View tab** — an optional MJPEG stream of the game window, so you can glance at
-the rocket while your eyes are on the console. Off by default per client; it
-costs nothing while nobody is watching it.
+**MFD tab** — mirrors any multi-function display on the craft as a live
+image, and taps on it are forwarded back into the game as if you had clicked
+the physical MFD yourself — buttons, page switches, everything.
+
+**Cameras tab** — an optional live view of the game window, or any of the
+craft's own camera-vantage parts (nose cam, docking cam, etc.) picked from a
+dropdown. Off by default per client; costs nothing while nobody is watching
+a feed.
 
 **Controls** — throttle slider, a big STAGE button, all ten activation groups
-with their in-game names, RCS translation toggle, brake, time warp up/down,
-pause, and navball heading locks (prograde, retrograde, target, manoeuvre node,
-free). Control can be disabled entirely for a read-only console.
+with their in-game names, RCS translation toggle, brake, and navball heading
+locks (prograde, retrograde, target, manoeuvre node, free). Control can be
+disabled entirely for a read-only console.
 
 ## Install
 
-1. Download `Second Screen.sr2-mod` from the releases, or build it yourself
+1. Download `PlusOne.sr2-mod` from the releases, or build it yourself
    (see [docs/BUILD.md](docs/BUILD.md)).
 2. Copy it into Juno's mods folder:
    - **Windows:** `%USERPROFILE%\AppData\LocalLow\Jundroo\SimpleRockets 2\Mods`
    - **macOS:** `~/Library/Application Support/Jundroo/SimpleRockets 2/Mods`
-3. Start Juno and enable **Second Screen** in the Mods menu.
+3. Start Juno. There's nothing to enable in the Mods menu — the console is
+   turned on from inside a flight instead (see below).
 
 ## Connect the iPad
 
 1. Put the iPad and the PC on the same Wi-Fi network.
-2. Start a flight. The address appears on screen for a few seconds, and is
-   always written to Juno's log:
-   `Second screen: http://192.168.1.20:8088/?t=k7prq2wf`
-3. Open that address in Safari. Tap **Share → Add to Home Screen** to get a
+2. Start a flight, open the **Flight Info** panel, expand the **PlusOne**
+   group, and tap **Enabled**. It always starts off — you turn it on for
+   each flight yourself, and it turns itself back off when you leave the
+   flight scene.
+3. The address appears on screen for a few seconds after you turn it on, and
+   is always written to Juno's log:
+   `PlusOne: http://192.168.1.20:8088/?t=k7prq2wf`
+4. Open that address in Safari. Tap **Share → Add to Home Screen** to get a
    full-screen icon without the browser chrome.
 
 The `?t=` token stops anything else on your network from driving your rocket.
 It is stored once and stays the same, so the home-screen shortcut keeps working.
-Turn it off under **Settings → Mods → Second Screen** if you would rather not
+Turn it off under **Settings → Mods → PlusOne** if you would rather not
 bother on a network you trust.
 
 If Windows asks whether to allow Juno through the firewall when the server
@@ -68,18 +82,19 @@ starts, say yes for **private networks** — otherwise the iPad cannot reach it.
 
 ## Settings
 
-Found under **Settings → Mods → Second Screen**. Changes take effect within a
-second; no restart needed.
+Found under **Settings → Mods → PlusOne**. Changes take effect within a
+second; no restart needed. There's no on/off switch here — that's the Flight
+Info panel's job (see [Connect the iPad](#connect-the-ipad)); everything
+below just configures how the console behaves once it's running.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Enabled | on | Runs the server. |
 | Port | 8088 | Change if something else already uses this port. |
 | Require access token | on | Only devices that open the `?t=...` address may connect. |
 | Allow control input | on | Off makes the console read-only. |
 | Telemetry rate | 15 Hz | Frames per second sent to the tablet. |
-| Enable video feed | on | Whether the View tab may stream at all. |
-| Video width | 640 px | Frames are scaled to this width before sending. |
+| Enable video feed | on | Whether the MFD/View/Cameras tabs may stream video at all. |
+| Video width | 1280 px | Frames are scaled to this width before sending. |
 | Video frame rate | 12 fps | Video frames per second. |
 | Video quality | 60 | JPEG quality of the video feed. |
 
@@ -102,6 +117,20 @@ the tablet out of reach.)
   downscaled and flipped in one blit, pulled off the GPU with
   `AsyncGPUReadback`, and JPEG-encoded on a worker thread. No render textures are
   allocated and no frames are captured while nobody is watching the feed.
+- The MFD and craft-camera feeds work the same way, but from a dedicated
+  off-screen camera pointed at the MFD's canvas or the vantage part instead of
+  a full screenshot, so they cost nothing on any part of the craft nobody has
+  picked to watch.
+- Taps on the MFD image are translated from the streamed image's normalized
+  coordinates into a hit test against the MFD's own widget hierarchy (no
+  raycast, since the console's capture camera isn't the player's own), then
+  dispatched through the game's own pointer-event interface — indistinguishable
+  from a real click as far as the MFD's own code is concerned.
+- The Orbit tab's ground track is sampled directly from the game's own orbit
+  simulation (`IOrbitNode.GetPointAtTime`) rather than a hand-rolled orbital
+  mechanics model, so it stays exact through burns and time warp; sampling is
+  capped to twice a second and only runs while a client actually has the tab
+  open.
 - The console's HTML, CSS and JavaScript live in [`web/`](web) and are baked into
   the mod assembly by [`tools/build_web_assets.py`](tools/build_web_assets.py),
   so the mod stays a single file to install.

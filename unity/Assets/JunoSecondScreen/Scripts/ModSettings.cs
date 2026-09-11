@@ -16,7 +16,7 @@ namespace JunoSecondScreen
         /// Initializes a new instance of the <see cref="ModSettings"/> class.
         /// </summary>
         public ModSettings()
-            : base("Juno Tether")
+            : base("PlusOne")
         {
         }
 
@@ -25,11 +25,6 @@ namespace JunoSecondScreen
         /// </summary>
         public static ModSettings Instance =>
             _instance ?? (_instance = Game.Instance.Settings.ModSettings.GetCategory<ModSettings>());
-
-        /// <summary>
-        /// Gets a value indicating whether the console server runs at all.
-        /// </summary>
-        public BoolSetting Enabled { get; private set; }
 
         /// <summary>
         /// Gets the TCP port the console is served on.
@@ -74,10 +69,6 @@ namespace JunoSecondScreen
         /// <inheritdoc />
         protected override void InitializeSettings()
         {
-            this.Enabled = this.CreateBool("Enabled")
-                .SetDescription("Allow the tablet console to be turned on. This doesn't start it by itself - use the Enabled switch in the Juno Tether flight panel group each flight to actually turn it on and off.")
-                .SetDefault(false);
-
             this.Port = this.CreateNumeric<float>("Port", 1024f, 65535f, 1f)
                 .SetDescription("The TCP port the console is served on. Change it if another program already uses this port.")
                 .SetDisplayFormatter(FormatInteger)

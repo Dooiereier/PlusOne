@@ -2,7 +2,9 @@ namespace JunoSecondScreen.Flight
 {
     using Assets.Scripts.Craft.Parts.Modifiers;
     using Assets.Scripts.Flight.GameView.Cameras;
+    using System.Reflection;
     using HarmonyLib;
+    using JunoSecondScreen.Util;
     using UnityEngine;
 
     /// <summary>
@@ -71,7 +73,97 @@ namespace JunoSecondScreen.Flight
             Camera = CreateCamera("SecondScreen External Camera (near)", vantagePoint, localOffset, localRotation, nearSource, fieldOfView, isNear: true);
             _farCamera = CreateCamera("SecondScreen External Camera (far)", vantagePoint, localOffset, localRotation, farSource, fieldOfView, isNear: false);
 
+            TryAttachVolkenClouds(Camera.gameObject);
+
             return true;
+        }
+
+        // Volken (a popular cloud-rendering mod) has its own support for
+        // attaching cloud rendering to "extra" world cameras - PIP-style
+        // mods, which is structurally exactly what this near/far pair is:
+        // two cameras sharing one targetTexture, far camera at a lower
+        // depth. But Volken only finds such cameras via its own periodic
+        // scan, which explicitly requires Camera.enabled == true (see
+        // VolkenUserInterface.IsExtraWorldCamera in Volken's own source) -
+        // and our near/far cameras are deliberately left disabled (see
+        // CreateCamera) so Unity never auto-renders them every frame; only
+        // our own throttled capture loop calls Render() on them. That
+        // makes Volken's scan skip this camera pair entirely, which is why
+        // clouds never appeared in this feed even though everything else
+        // about the setup matches what Volken expects.
+        //
+        // Attaching Volken's CloudRenderer component here directly
+        // sidesteps that scan, without touching our enabled=false/manual-
+        // Render() setup - Unity still fires the rendering callbacks
+        // CloudRenderer relies on (OnPreRender, [ImageEffectOpaque]/
+        // OnRenderImage, etc.) for an explicit Camera.Render() call just
+        // as it would for an auto-rendered camera. Volken resolves its own
+        // far-depth source by searching for another camera sharing this
+        // one's targetTexture at a lower depth (again matching our pair
+        // exactly), so nothing else needs to be done once this is
+        // attached.
+        //
+        // Uses reflection since Volken is an optional third-party mod this
+        // code neither depends on nor ships with - a no-op if Volken isn't
+        // installed, or if its types ever change shape.
+        private static void TryAttachVolkenClouds(GameObject nearCameraObject)
+        {
+            try
+            {
+                System.Type cloudRendererType = FindVolkenType("CloudRenderer");
+                if (cloudRendererType == null || nearCameraObject.GetComponent(cloudRendererType) != null)
+                {
+                    return;
+                }
+
+                if (!IsVolkenExtraCameraCloudsEnabled())
+                {
+                    return;
+                }
+
+                nearCameraObject.AddComponent(cloudRendererType);
+                Log.Info("Attached Volken's cloud rendering to the external camera feed.");
+            }
+            catch (System.Exception ex)
+            {
+                Log.Warn($"Could not attach Volken clouds to the external camera feed: {ex.Message}");
+            }
+        }
+
+        // Best-effort read of Volken's own "Extra Camera Clouds" player
+        // setting (Assets.Scripts.ModSettings.Instance.ExtraCameraClouds.
+        // Value), so this respects it the same way Volken's own scan
+        // would. Defaults to true (attach anyway) if the setting can't be
+        // found - Volken itself defaults it to true, and failing to read
+        // an optional third-party mod's setting shouldn't silently
+        // suppress the feature this whole method exists for.
+        private static bool IsVolkenExtraCameraCloudsEnabled()
+        {
+            try
+            {
+                System.Type settingsType = FindVolkenType("Assets.Scripts.ModSettings");
+                object instance = settingsType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
+                object boolSetting = instance != null ? settingsType.GetProperty("ExtraCameraClouds")?.GetValue(instance) : null;
+                object value = boolSetting?.GetType().GetProperty("Value")?.GetValue(boolSetting);
+                return !(value is bool enabled) || enabled;
+            }
+            catch
+            {
+                return true;
+            }
+        }
+
+        private static System.Type FindVolkenType(string typeName)
+        {
+            foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (assembly.GetName().Name == "Volken")
+                {
+                    return assembly.GetType(typeName);
+                }
+            }
+
+            return null;
         }
 
         private Camera CreateCamera(string name, Transform vantagePoint, Vector3 localOffset, Quaternion localRotation, Camera sourceCamera, float? fieldOfView, bool isNear)
@@ -121,14 +213,23 @@ namespace JunoSecondScreen.Flight
             }
 
             // The real camera's output normally passes through a post-process
-            // stack (ImageEffectsScript: tone mapping, bloom, a Beautify color
-            // grade) that CopyFrom has no way to bring along - it only copies
-            // Camera-component properties, not other components on that
-            // GameObject. Without tone mapping, HDR sky/highlight values that
-            // the real pipeline compresses back into range instead clip
-            // straight to white (the "sky fades to white" look). Rendering in
-            // LDR here avoids that overflow in the first place, at the cost
-            // of looking flatter than the real, fully graded view.
+            // stack (ImageEffectsScript -> a Beautify component: tone mapping,
+            // bloom, a color grade) that CopyFrom has no way to bring along -
+            // it only copies Camera-component properties, not other
+            // components on that GameObject.
+            //
+            // A version of this once tried adding our own Beautify instance
+            // and copying its properties over (including "lut", the property
+            // that actually applies its tone-mapping curve) and turning HDR
+            // on to match. That made things measurably worse, not better: on
+            // a real test it produced a near-total white blowout of the sky.
+            // The likely reason is that "lut" mirrors the *player's own*
+            // tonemapping quality setting, which is commonly "None" - so lut
+            // came back false, nothing was left to compress the HDR range
+            // back down, and unclamped HDR values blew straight to white
+            // instead of being clamped the way flat LDR rendering naturally
+            // does. Reverted: HDR stays off, and this renders flatter than
+            // the real, fully graded view, but safely so.
             camera.allowHDR = false;
 
             camera.targetTexture = Texture; // off-screen only, never drawn to the player's screen

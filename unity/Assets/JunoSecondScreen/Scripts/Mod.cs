@@ -34,7 +34,7 @@ namespace JunoSecondScreen
                 return;
             }
 
-            _serviceObject = new GameObject("Juno Tether Service");
+            _serviceObject = new GameObject("PlusOne Service");
             Object.DontDestroyOnLoad(_serviceObject);
             _serviceObject.AddComponent<SecondScreenService>();
 
@@ -43,7 +43,9 @@ namespace JunoSecondScreen
 
             FlightInfoPanelIntegration.Register();
 
-            Log.Info("Juno Tether mod initialized.");
+            new ModUpdater().CheckForUpdate();
+
+            Log.Info("PlusOne mod initialized.");
         }
     }
 }

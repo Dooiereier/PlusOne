@@ -2,7 +2,6 @@ namespace JunoSecondScreen
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Security.Cryptography;
     using System.Text;
@@ -87,29 +86,6 @@ namespace JunoSecondScreen
         // at all while every connected client is looking at some other tab.
         private int _orbitTabViewers;
 
-        // Per-subsystem timing breakdown for Update(), to replace guessing
-        // about where an observed FPS hit actually comes from with a real
-        // number - e.g. distinguishing "this MonoBehaviour's own polling
-        // work" from "a Harmony patch adding overhead to a game method this
-        // never touches directly" (which this diagnostic would show as *no*
-        // added cost here, despite a real FPS drop). Logged as an average
-        // per-frame ms cost over the last UpdateDiagIntervalSeconds, not per
-        // frame, so it stays readable.
-        private const float UpdateDiagIntervalSeconds = 3f;
-        private readonly Stopwatch _diagStopwatch = new Stopwatch();
-        private double _diagCommandsMs, _diagTelemetryMs, _diagMfdMs, _diagAnnounceMs, _diagPlanetMapMs;
-        private int _diagFrameCount;
-        private float _nextUpdateDiagAt = float.NegativeInfinity;
-
-        // FrameTimingManager reports actual GPU frame time (on D3D11/D3D12/
-        // Metal/Vulkan) without needing the Profiler's GPU module, which
-        // isn't available in this project. This is what actually answers
-        // "is the GPU doing more work / taking longer per frame with the mod
-        // on", rather than more CPU-side Stopwatch timing that's already
-        // shown this mod's own code isn't the one spending the time.
-        private readonly UnityEngine.FrameTiming[] _diagFrameTimings = new UnityEngine.FrameTiming[1];
-        private double _diagGpuMsSum, _diagCpuMsSum;
-        private int _diagGpuSampleCount;
         private bool _configured;
         private bool _flightMessageShown;
 
@@ -133,7 +109,7 @@ namespace JunoSecondScreen
 
         /// <summary>
         /// The first connection URL (address + port + token query string, no
-        /// "Second screen: " label), or null if the server isn't running or no
+        /// "PlusOne: " label - see BuildConnectionInfo), or null if the server isn't running or no
         /// local network address was found. Kept short/clean for display in UI,
         /// unlike BuildConnectionInfo()'s log-formatted lines.
         /// </summary>
@@ -225,80 +201,19 @@ namespace JunoSecondScreen
             if (IsRunning && Game.Instance.FlightScene == null)
             {
                 Shutdown();
-                Log.Info("Second screen turned off - left the flight scene.");
+                Log.Info("PlusOne turned off - left the flight scene.");
             }
 
-            bool serverRunning = _server != null && _server.IsRunning;
-
-            // Real GPU/CPU frame time from the graphics driver itself (D3D11/
-            // D3D12/Metal/Vulkan), independent of anything this mod's own
-            // code does. Captured every frame regardless of serverRunning -
-            // unlike the subsystem timings below, which are meaningless
-            // while the server's off - so the log directly compares mod-on
-            // vs mod-off GPU cost without needing a separate baseline
-            // reading from something else (an FPS overlay, etc.).
-            UnityEngine.FrameTimingManager.CaptureFrameTimings();
-            if (UnityEngine.FrameTimingManager.GetLatestTimings((uint)_diagFrameTimings.Length, _diagFrameTimings) > 0)
-            {
-                _diagGpuMsSum += _diagFrameTimings[0].gpuFrameTime;
-                _diagCpuMsSum += _diagFrameTimings[0].cpuFrameTime;
-                _diagGpuSampleCount++;
-            }
-
-            if (Time.unscaledTime >= _nextUpdateDiagAt)
-            {
-                _nextUpdateDiagAt = Time.unscaledTime + UpdateDiagIntervalSeconds;
-
-                string gpuInfo = _diagGpuSampleCount > 0
-                    ? $"gpuFrameTime={_diagGpuMsSum / _diagGpuSampleCount:F2}ms cpuFrameTime={_diagCpuMsSum / _diagGpuSampleCount:F2}ms (n={_diagGpuSampleCount})"
-                    : "gpuFrameTime=unavailable (FrameTimingManager unsupported here)";
-
-                if (_diagFrameCount > 0)
-                {
-                    double totalMs = _diagCommandsMs + _diagTelemetryMs + _diagMfdMs + _diagAnnounceMs + _diagPlanetMapMs;
-                    Log.Info(
-                        $"[Vizzy perf diag] serverRunning=true, Update() over {_diagFrameCount} frames / {UpdateDiagIntervalSeconds:F0}s: " +
-                        $"commands={_diagCommandsMs:F1}ms telemetry={_diagTelemetryMs:F1}ms mfd={_diagMfdMs:F1}ms " +
-                        $"announce={_diagAnnounceMs:F1}ms planetMap={_diagPlanetMapMs:F1}ms " +
-                        $"| avg/frame={totalMs / _diagFrameCount:F3}ms | {gpuInfo} " +
-                        $"consoleClients={ConsoleClients} mfdTabViewers={Volatile.Read(ref _mfdTabViewers)}");
-                }
-                else
-                {
-                    Log.Info($"[Vizzy perf diag] serverRunning=false | {gpuInfo}");
-                }
-
-                _diagCommandsMs = _diagTelemetryMs = _diagMfdMs = _diagAnnounceMs = _diagPlanetMapMs = 0d;
-                _diagGpuMsSum = _diagCpuMsSum = 0d;
-                _diagGpuSampleCount = 0;
-                _diagFrameCount = 0;
-            }
-
-            if (!serverRunning)
+            if (_server == null || !_server.IsRunning)
             {
                 return;
             }
 
-            _diagFrameCount++;
-            _diagStopwatch.Restart();
             _commands.Apply();
-            _diagCommandsMs += _diagStopwatch.Elapsed.TotalMilliseconds;
-
-            _diagStopwatch.Restart();
             PublishTelemetry();
-            _diagTelemetryMs += _diagStopwatch.Elapsed.TotalMilliseconds;
-
-            _diagStopwatch.Restart();
             PublishMfd();
-            _diagMfdMs += _diagStopwatch.Elapsed.TotalMilliseconds;
-
-            _diagStopwatch.Restart();
             AnnounceInFlight();
-            _diagAnnounceMs += _diagStopwatch.Elapsed.TotalMilliseconds;
-
-            _diagStopwatch.Restart();
             RefreshPlanetMap();
-            _diagPlanetMapMs += _diagStopwatch.Elapsed.TotalMilliseconds;
         }
 
         // Cheap when the planet hasn't changed (a dictionary lookup, no file
@@ -336,25 +251,25 @@ namespace JunoSecondScreen
         /* ------------------------------------------------------------- lifecycle */
 
         /// <summary>
-        /// Turns the server on or off for this session. This is the actual
-        /// day-to-day on/off switch - the mod never auto-starts on its own
-        /// (see ApplyConfiguration), so a player uses this every time they
-        /// actually want the console running, same as any other in-flight
-        /// toggle. Only works at all while the mod settings' Enabled checkbox
-        /// permits it - that checkbox is a master gate, not a "start serving"
-        /// switch of its own.
+        /// Turns the server on or off for this session. This is the only
+        /// on/off control the mod has - there's no separate settings-level
+        /// switch - so a player uses this every time they actually want the
+        /// console running, same as any other in-flight toggle. The mod
+        /// never auto-starts on its own (see ApplyConfiguration): it always
+        /// comes up off, even if it was left running the last time this
+        /// craft/session flew.
         /// </summary>
         public void ToggleEnabled()
         {
             if (IsRunning)
             {
                 Shutdown();
-                Log.Info("Second screen turned off from the flight panel.");
+                Log.Info("PlusOne turned off from the flight panel.");
             }
-            else if (_configured && _configuration.Enabled)
+            else if (_configured)
             {
                 StartServer(_configuration);
-                Log.Info("Second screen turned on from the flight panel.");
+                Log.Info("PlusOne turned on from the flight panel.");
             }
         }
 
@@ -363,33 +278,20 @@ namespace JunoSecondScreen
             _configuration = configuration;
             _commands.ControlEnabled = configuration.AllowControl;
 
-            if (!configuration.Enabled)
-            {
-                // The master gate is off - fully stop and stay stopped,
-                // regardless of whatever the flight panel toggle last chose
-                // this session (that toggle only works while this is true).
-                Shutdown();
-                Log.Info("Second screen is switched off in the mod settings.");
-                return;
-            }
-
-            // Enabled merely being true does NOT start the server by itself -
-            // ToggleEnabled (the flight panel switch) is the only thing that
-            // does that, on purpose, each session. This just makes starting
-            // it possible. If it's already running (the player turned it on,
-            // then changed some other setting like video quality), restart it
-            // with the new configuration rather than leaving it running with
-            // stale settings; otherwise leave it off.
+            // A settings change never starts the server by itself - only
+            // ToggleEnabled (the flight panel switch) does that. If it's
+            // already running (the player turned it on, then changed some
+            // other setting like video quality), restart it with the new
+            // configuration rather than leaving it running with stale
+            // settings; otherwise leave it off.
             if (IsRunning)
             {
                 Shutdown();
                 StartServer(configuration);
-                Log.Info("Restarting the second screen server with the new settings.");
+                Log.Info("Restarting the PlusOne server with the new settings.");
             }
         }
 
-        // Starts the HTTP server unconditionally, ignoring configuration.Enabled
-        // (the caller decides whether that gate applies).
         private void StartServer(ModConfiguration configuration)
         {
             // Force ConnectionAddress to recompute on next read rather than
@@ -451,7 +353,7 @@ namespace JunoSecondScreen
             var address = ConnectionAddress;
             if (!string.IsNullOrEmpty(address))
             {
-                Log.Info("Second screen started on " + address);
+                Log.Info("PlusOne started on " + address);
             }
         }
 
@@ -625,12 +527,12 @@ namespace JunoSecondScreen
             string query = _configuration.RequireToken ? "/?t=" + _token : "/";
             foreach (string address in NetworkUtil.GetLocalAddresses())
             {
-                lines.Add($"Second screen: http://{address}:{_server.Port}{query}");
+                lines.Add($"PlusOne: http://{address}:{_server.Port}{query}");
             }
 
             if (lines.Count == 0)
             {
-                lines.Add($"Second screen listening on port {_server.Port}, but no network address was found.");
+                lines.Add($"PlusOne listening on port {_server.Port}, but no network address was found.");
             }
 
             return lines;
@@ -1202,7 +1104,7 @@ namespace JunoSecondScreen
         {
             var json = new JsonWriter(256);
             json.StartObject();
-            json.Prop("mod", "Juno Tether");
+            json.Prop("mod", "PlusOne");
             json.Prop("port", _server?.Port ?? 0);
             json.Prop("clients", ConsoleClients);
             json.Prop("control", _configuration.AllowControl);
@@ -1215,12 +1117,12 @@ namespace JunoSecondScreen
         private const string UnauthorizedPage =
             "<!DOCTYPE html><html><head><meta charset=\"utf-8\">" +
             "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
-            "<title>Juno Tether</title></head>" +
+            "<title>PlusOne</title></head>" +
             "<body style=\"font-family:-apple-system,sans-serif;background:#070b12;color:#d8e3f2;padding:32px\">" +
             "<h1>Access token required</h1>" +
             "<p>Open the address printed in Juno's log, or shown on screen when a flight starts. " +
             "It looks like <code>http://192.168.x.x:8088/?t=abcd1234</code>.</p>" +
-            "<p>You can turn the token off under <b>Settings &rarr; Mods &rarr; Juno Tether</b>.</p>" +
+            "<p>You can turn the token off under <b>Settings &rarr; Mods &rarr; PlusOne</b>.</p>" +
             "</body></html>";
 
         /// <summary>

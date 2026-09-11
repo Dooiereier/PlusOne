@@ -4,8 +4,6 @@ namespace JunoSecondScreen.Flight
     using System.Collections;
     using System.Collections.Generic;
     using System.Threading;
-    using Assets.Scripts.Flight.GameView.Cameras;
-    using HarmonyLib;
     using JunoSecondScreen.Util;
     using UnityEngine;
     using UnityEngine.Experimental.Rendering;
@@ -38,7 +36,6 @@ namespace JunoSecondScreen.Flight
         private Canvas _currentCanvas;
         private string _currentPart;
         private volatile string _requestedPart;
-        private float _nextDiagTime;
         private Texture2D _syncReadbackTexture;
         private Thread _encoderThread;
         private volatile bool _disposed;
@@ -155,53 +152,6 @@ namespace JunoSecondScreen.Flight
             }
         }
 
-        // Throttled (every couple seconds) so it doesn't spam the log - reports
-        // the MFD canvas's own active/enabled state and its distance from the
-        // player's real camera, to check whether "MFD turns grey far away" is
-        // the game disabling/hiding the canvas itself based on the player's
-        // own camera distance (unrelated to our dedicated close-up capture
-        // camera, which never moves away from the MFD).
-        private void LogDiagnostics()
-        {
-            if (Time.unscaledTime < _nextDiagTime || _currentCanvas == null)
-            {
-                return;
-            }
-
-            _nextDiagTime = Time.unscaledTime + 2f;
-
-            var cameraManager = CameraManagerScript.Instance;
-            Camera realCamera = cameraManager != null ? Traverse.Create(cameraManager).Field("_nearCamera").GetValue<Camera>() : null;
-            float distance = realCamera != null
-                ? Vector3.Distance(realCamera.transform.position, _currentCanvas.transform.position)
-                : -1f;
-
-            Log.Info(
-                $"[Vizzy MFD grey diag] canvas active={_currentCanvas.gameObject.activeInHierarchy} " +
-                $"enabled={_currentCanvas.enabled} realCameraDistance={distance:0.#} " +
-                $"ourCameraActive={(_camera?.Camera != null && _camera.Camera.gameObject.activeInHierarchy)} " +
-                $"ancestry=[{DescribeActiveAncestry(_currentCanvas.transform)}]");
-        }
-
-        // Lists each ancestor's own activeSelf flag from the canvas up to the
-        // scene root, so a canvas whose own activeSelf is true but
-        // activeInHierarchy is false (inactive only because of an ancestor)
-        // can be told apart from the canvas itself being the one toggled off
-        // - that determines whether reactivating the canvas alone would even
-        // work, or some higher, sleeping ancestor needs to be reactivated too.
-        private static string DescribeActiveAncestry(Transform start)
-        {
-            var parts = new List<string>();
-            Transform current = start;
-            for (int depth = 0; current != null && depth < 12; depth++)
-            {
-                parts.Add($"{current.name}:{(current.gameObject.activeSelf ? "on" : "OFF")}");
-                current = current.parent;
-            }
-
-            return string.Join(" < ", parts);
-        }
-
         public bool WaitForFrame(int lastVersion, int timeoutMs, out byte[] jpeg, out int version)
         {
             lock (_frameLock)
@@ -257,7 +207,6 @@ namespace JunoSecondScreen.Flight
                 try
                 {
                     ApplyPendingTarget();
-                    LogDiagnostics();
 
                     // Keeps the game from putting this specific MFD's screen
                     // to sleep for as long as someone's watching it - see

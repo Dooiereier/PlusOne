@@ -52,10 +52,6 @@ namespace JunoSecondScreen.Flight
             GameObject target = FindTopmostHit(rect, worldPoint);
             IGameViewPointerEventHandler handler = target != null ? target.GetComponentInParent<IGameViewPointerEventHandler>() : null;
 
-            Log.Info(
-                $"[Vizzy MFD click diag] canvas='{canvas.name}' u={u:0.###} v={v:0.###} " +
-                $"target={(target != null ? target.name : "none")} handler={(handler != null ? handler.GetType().Name : "none")}");
-
             if (handler == null)
             {
                 return;
