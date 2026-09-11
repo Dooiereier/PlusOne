@@ -168,10 +168,23 @@ namespace PlusOne.Flight
 
         private Camera CreateCamera(string name, Transform vantagePoint, Vector3 localOffset, Quaternion localRotation, Camera sourceCamera, float? fieldOfView, bool isNear)
         {
-            var cameraObject = new GameObject(name)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-            };
+            // CONFIRMED FIX (Player.log diagnostic showed FarCameraScript
+            // never resolved onto _farCamera): HideFlags.HideAndDontSave was
+            // silently excluding this GameObject from
+            // UnityEngine.Object.FindObjectsOfType<Camera>() - which is
+            // exactly how Volken's CloudRenderer.TryResolveFarDepthSource
+            // locates its paired far camera. With no far camera found, it
+            // fell back to Volken.Instance.farCam - the real game's own
+            // main-view far camera - so our cloud rendering's depth/
+            // occlusion data ended up tied to wherever the player's own
+            // camera happened to be looking, not ours. That's why clouds
+            // would partially vanish depending on the main camera's view
+            // direction (confirmed: looking downward hid clouds especially).
+            // HideAndDontSave is an editor-only concern anyway (hiding from
+            // the Hierarchy window, skipping scene-file serialization) -
+            // meaningless in a shipped build, so nothing is lost by leaving
+            // it off.
+            var cameraObject = new GameObject(name);
             var camera = cameraObject.AddComponent<Camera>();
 
             // Match the source camera's rendering settings (culling mask, clip
