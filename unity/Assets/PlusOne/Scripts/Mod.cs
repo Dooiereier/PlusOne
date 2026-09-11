@@ -38,8 +38,25 @@ namespace PlusOne
             Object.DontDestroyOnLoad(_serviceObject);
             _serviceObject.AddComponent<PlusOneService>();
 
-            _harmony = new HarmonyLib.Harmony("com.dooiereier.plusone");
-            _harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
+            // A real report: on an older game version (1.4.105.0c vs. the
+            // 1.4.200.0c this mod was built against), MfdScript.IsScreenVisible
+            // didn't exist yet, so Harmony's PatchAll threw
+            // "Undefined target method" - an unhandled exception here aborts
+            // OnModInitialized entirely, taking down the whole mod (server,
+            // flight panel integration, everything) over what's really just
+            // an MFD-flicker optimization (see MfdScreenVisibilityPatch).
+            // Isolating this means a patch failure - from a game update, a
+            // conflicting mod, or anything else - degrades gracefully
+            // instead of preventing the mod from working at all.
+            try
+            {
+                _harmony = new HarmonyLib.Harmony("com.dooiereier.plusone");
+                _harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
+            }
+            catch (System.Exception ex)
+            {
+                Log.Warn($"Harmony patching failed, continuing without it: {ex.Message}");
+            }
 
             FlightInfoPanelIntegration.Register();
 
