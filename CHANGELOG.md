@@ -2,9 +2,9 @@
 
 ## v0.1.0
 
-First release. Turns an iPad — or any browser on your network — into a touch
-flight console for Juno: New Origins, served by a small web server running
-inside the game. Nothing is installed on the tablet.
+First release. Turns any tablet, phone or laptop with a browser on your
+network into a touch flight console for Juno: New Origins, served by a small
+web server running inside the game. Nothing is installed on the device.
 
 **Status:** the mod compiles against the game's own assemblies and its transport
 and console layers are covered by automated tests, but it has not yet been
@@ -25,7 +25,7 @@ loaded by Juno itself. Treat this as a first cut and expect rough edges in game.
 - **Controls** — throttle slider, stage button, all ten activation groups with
   their in-game names, RCS translation, brake, time warp, pause, and navball
   heading locks.
-- Responsive down to phone width; add it to the iPad home screen for a
+- Responsive down to phone width; add it to the device's home screen for a
   full-screen console.
 
 ### Mod

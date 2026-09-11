@@ -1,11 +1,11 @@
-namespace JunoSecondScreen.Tests.Protocol
+namespace PlusOne.Tests.Protocol
 {
     using System;
     using System.Collections.Generic;
     using System.Text;
     using System.Threading;
-    using JunoSecondScreen.Net;
-    using JunoSecondScreen.Util;
+    using PlusOne.Net;
+    using PlusOne.Util;
 
     internal static class ProtocolHarness
     {

@@ -8,7 +8,7 @@ exercises them without Unity or the game:
   handshake, masked and fragmented client frames, extended payload lengths,
   ping/pong, and MJPEG part framing.
 - **`console_test.py`** serves the baked console from `WebAssets.g.cs` against a
-  simulated ascent, loads it in headless Chromium at iPad size, and checks that
+  simulated ascent, loads it in headless Chromium at tablet size, and checks that
   telemetry renders, the canvases draw, the layout survives a portrait viewport,
   and that touching the controls sends the expected commands back. Screenshots
   land in `build/screenshots`.

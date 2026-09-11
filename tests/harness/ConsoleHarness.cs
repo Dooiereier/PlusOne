@@ -1,11 +1,11 @@
-namespace JunoSecondScreen.Tests.Console
+namespace PlusOne.Tests.Console
 {
     using System;
     using System.Collections.Generic;
     using System.Threading;
-    using JunoSecondScreen.Net;
-    using JunoSecondScreen.Util;
-    using JunoSecondScreen.Web;
+    using PlusOne.Net;
+    using PlusOne.Util;
+    using PlusOne.Web;
 
     /// <summary>
     /// Serves the real baked console against a simulated ascent so the front end can

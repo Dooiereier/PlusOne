@@ -14,7 +14,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$HERE")"
-BUILD="${SECOND_SCREEN_BUILD:-$HERE/build}"
+BUILD="${PLUSONE_BUILD:-$HERE/build}"
 ASSEMBLIES="${MOD_TOOLS_ASSEMBLIES:-}"
 
 if [[ -z "$ASSEMBLIES" || ! -f "$ASSEMBLIES/ModApi.dll" ]]; then
@@ -30,8 +30,8 @@ mcs -langversion:latest -target:library -out:"$BUILD/UnityEngine.CoreModule.dll"
     -r:"$BUILD/Unity.Collections.dll" "$HERE/stubs/UnityEngine.cs"
 
 echo "Type checking the mod..."
-mapfile -t SOURCES < <(find "$ROOT/unity/Assets/JunoSecondScreen/Scripts" -name '*.cs')
-mcs -langversion:latest -target:library -out:"$BUILD/JunoSecondScreen.dll" \
+mapfile -t SOURCES < <(find "$ROOT/unity/Assets/PlusOne/Scripts" -name '*.cs')
+mcs -langversion:latest -target:library -out:"$BUILD/PlusOne.dll" \
     -r:"$BUILD/UnityEngine.CoreModule.dll" \
     -r:"$BUILD/Unity.Collections.dll" \
     -r:"$ASSEMBLIES/ModApi.dll" \

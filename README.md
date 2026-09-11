@@ -1,19 +1,19 @@
 # PlusOne
 
-Turn an iPad — or any tablet, phone or laptop with a browser — into a second
-screen for **Juno: New Origins**: a full flight console, an orbit map, an MFD
-mirror you can actually tap, and a live craft-camera feed.
+Turn any tablet, phone or laptop with a browser into a second screen for
+**Juno: New Origins**: a full flight console, an orbit map, an MFD mirror you
+can actually tap, and a live craft-camera feed.
 
-The mod runs a small web server inside the game. Point Safari at your PC's
-address and the tablet becomes a touch console: navball, gauges, orbit ground
+The mod runs a small web server inside the game. Point a browser at your PC's
+address and the device becomes a touch console: navball, gauges, orbit ground
 track, MFD mirroring, resource bars, staging, throttle, activation groups and
 time warp, plus an optional live view of the game window or any craft camera.
-No App Store app, no cables, no extra software on the iPad.
+No app-store app, no cables, no extra software on the other device.
 
 ```
-   PC running Juno                     iPad on the same Wi-Fi
+   PC running Juno                     Tablet on the same Wi-Fi
   ┌──────────────────┐                ┌──────────────────────┐
-  │ game + mod       │  telemetry ──▶ │  Safari              │
+  │ game + mod       │  telemetry ──▶ │  Browser             │
   │  HTTP :8088      │                │   navball, gauges,   │
   │  WebSocket /ws   │ ◀── commands   │   MFD, staging,      │
   │  MJPEG streams   │  ──── video ─▶ │   throttle, cameras  │
@@ -59,9 +59,9 @@ disabled entirely for a read-only console.
 3. Start Juno. There's nothing to enable in the Mods menu — the console is
    turned on from inside a flight instead (see below).
 
-## Connect the iPad
+## Connect the console
 
-1. Put the iPad and the PC on the same Wi-Fi network.
+1. Put the tablet (or phone/laptop) and the PC on the same Wi-Fi network.
 2. Start a flight, open the **Flight Info** panel, expand the **PlusOne**
    group, and tap **Enabled**. It always starts off — you turn it on for
    each flight yourself, and it turns itself back off when you leave the
@@ -69,8 +69,9 @@ disabled entirely for a read-only console.
 3. The address appears on screen for a few seconds after you turn it on, and
    is always written to Juno's log:
    `PlusOne: http://192.168.1.20:8088/?t=k7prq2wf`
-4. Open that address in Safari. Tap **Share → Add to Home Screen** to get a
-   full-screen icon without the browser chrome.
+4. Open that address in the device's browser. Most mobile browsers offer an
+   "Add to Home Screen" option (Share menu on iOS/Safari, ⋮ menu on
+   Android/Chrome) for a full-screen icon without the browser chrome.
 
 The `?t=` token stops anything else on your network from driving your rocket.
 It is stored once and stays the same, so the home-screen shortcut keeps working.
@@ -78,13 +79,14 @@ Turn it off under **Settings → Mods → PlusOne** if you would rather not
 bother on a network you trust.
 
 If Windows asks whether to allow Juno through the firewall when the server
-starts, say yes for **private networks** — otherwise the iPad cannot reach it.
+starts, say yes for **private networks** — otherwise the other device cannot
+reach it.
 
 ## Settings
 
 Found under **Settings → Mods → PlusOne**. Changes take effect within a
 second; no restart needed. There's no on/off switch here — that's the Flight
-Info panel's job (see [Connect the iPad](#connect-the-ipad)); everything
+Info panel's job (see [Connect the console](#connect-the-console)); everything
 below just configures how the console behaves once it's running.
 
 | Setting | Default | What it does |
@@ -138,13 +140,13 @@ the tablet out of reach.)
 ## What this is not
 
 This is a **companion console**, not an operating-system second display: Juno
-still renders on your PC, and the iPad shows instruments (plus an optional video
-feed) rather than becoming a monitor Windows can extend onto.
+still renders on your PC, and the other device shows instruments (plus an
+optional video feed) rather than becoming a monitor Windows can extend onto.
 
 If you want a genuine extended desktop, use Sidecar (macOS) or Duet/Luna Display
-(Windows) to make the iPad a real display first, then a multi-display mod such as
+(Windows) to make a tablet a real display first, then a multi-display mod such as
 PigeonEye can put the map view on it. The two approaches complement each other —
-this mod is the one that works with nothing installed on the iPad.
+this mod is the one that works with nothing installed on the other device.
 
 ## Building and testing
 
@@ -156,7 +158,7 @@ Most of the mod can be checked without opening Unity or launching the game:
 
 ```bash
 # HTTP, WebSocket, MJPEG and JSON against the real classes, then the baked
-# console driven in headless Chromium at iPad size against a simulated ascent.
+# console driven in headless Chromium at tablet size against a simulated ascent.
 ./tests/run_tests.sh
 
 # Compile the whole mod, ModApi calls included, against the game's own assemblies.

@@ -14,9 +14,9 @@
 1. Create a new empty Unity 2022.3 project.
 2. `Assets → Import Package → Custom Package…`, choose
    `SimpleRockets2_ModTools.unitypackage`, import everything.
-3. Copy this repository's `unity/Assets/JunoSecondScreen` folder and
+3. Copy this repository's `unity/Assets/PlusOne` folder and
    `unity/Assets/ModData.asset` into the project's `Assets` folder.
-4. Unity compiles `JunoSecondScreen.dll` from the assembly definition. The
+4. Unity compiles `PlusOne.dll` from the assembly definition. The
    console errors you might see at this point are almost always a missing Mod
    Tools import, not the mod code.
 5. Open `ModData.asset` in the inspector and check that `_assemblies` lists
@@ -45,7 +45,7 @@ After editing, re-bake them into the assembly:
 python3 tools/build_web_assets.py
 ```
 
-That rewrites `unity/Assets/JunoSecondScreen/Scripts/Web/WebAssets.g.cs`, which
+That rewrites `unity/Assets/PlusOne/Scripts/Web/WebAssets.g.cs`, which
 is committed so that a Unity-only checkout still builds. Do not edit the
 generated file by hand.
 
@@ -64,7 +64,7 @@ Scripts/
   Mod.cs                  Mod entry point; creates the persistent service object
   ModSettings.cs          The mod's page in Juno's settings screen
   ModConfiguration.cs     Immutable settings snapshot; drives live restarts
-  SecondScreenService.cs  Server lifecycle, routing, auth, telemetry publishing
+  PlusOneService.cs       Server lifecycle, routing, auth, telemetry publishing
   DeployTools.cs          Editor-only menu items (guarded by UNITY_EDITOR)
   Flight/
     TelemetryCollector.cs Reads ModApi and writes the telemetry frame

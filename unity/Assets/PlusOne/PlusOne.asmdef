@@ -1,0 +1,8 @@
+{
+	"name": "PlusOne",
+	"references": [
+		"UnityEngine.UI",
+		"Unity.TextMeshPro",
+		"Unity.Mathematics"
+	]
+}

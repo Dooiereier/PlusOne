@@ -15,8 +15,8 @@ MonoBehaviour:
   _assemblies:
   - PlusOne.dll
   _author: Dooiereier
-  _description: "Turn an iPad \u2014 or any tablet, phone or laptop with a browser
-    \u2014 into a second screen.\n\nRestart JNO after enabling this mod when also
+  _description: "Turn any tablet, phone or laptop with a browser into a second
+    screen.\n\nRestart JNO after enabling this mod when also
     using <color=green>Flight Info+!\n\n<color=red>Harmony required!"
   _loadPriority: 1000
   _name: PlusOne

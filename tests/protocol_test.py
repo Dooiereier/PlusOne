@@ -2,7 +2,7 @@
 import base64, hashlib, json, os, socket, struct, subprocess, sys, time
 
 HOST, PORT = "127.0.0.1", 18088
-BUILD = os.environ.get("SECOND_SCREEN_BUILD", os.path.join(os.path.dirname(os.path.abspath(__file__)), "build"))
+BUILD = os.environ.get("PLUSONE_BUILD", os.path.join(os.path.dirname(os.path.abspath(__file__)), "build"))
 failures = []
 
 def check(name, ok, detail=""):

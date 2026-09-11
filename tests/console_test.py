@@ -1,10 +1,10 @@
-"""Drives the baked console in Chromium at iPad size against the simulated flight."""
+"""Drives the baked console in Chromium at tablet size against the simulated flight."""
 import os, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BUILD = os.environ.get("SECOND_SCREEN_BUILD", os.path.join(HERE, "build"))
-SHOTS = os.environ.get("SECOND_SCREEN_SHOTS", os.path.join(BUILD, "screenshots"))
+BUILD = os.environ.get("PLUSONE_BUILD", os.path.join(HERE, "build"))
+SHOTS = os.environ.get("PLUSONE_SHOTS", os.path.join(BUILD, "screenshots"))
 os.makedirs(SHOTS, exist_ok=True)
 CHROME = os.environ.get("CHROMIUM_PATH", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
 failures = []
@@ -23,7 +23,7 @@ url = "http://127.0.0.1:18099/"
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=CHROME,
                                 args=["--no-sandbox"])
-    # iPad Pro 11" landscape.
+    # Large tablet landscape, sized like an iPad Pro 11".
     page = browser.new_page(viewport={"width": 1194, "height": 834}, device_scale_factor=2,
                             has_touch=True, is_mobile=False)
     errors = []

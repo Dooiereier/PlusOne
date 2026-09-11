@@ -12,8 +12,8 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$HERE")"
-BUILD="${SECOND_SCREEN_BUILD:-$HERE/build}"
-SOURCES="$ROOT/unity/Assets/JunoSecondScreen/Scripts"
+BUILD="${PLUSONE_BUILD:-$HERE/build}"
+SOURCES="$ROOT/unity/Assets/PlusOne/Scripts"
 
 rm -rf "$BUILD"
 mkdir -p "$BUILD"
@@ -26,12 +26,12 @@ mapfile -t FILES < <(
 )
 
 echo "Building test harnesses..."
-mcs -langversion:latest -target:exe -main:JunoSecondScreen.Tests.Protocol.ProtocolHarness \
+mcs -langversion:latest -target:exe -main:PlusOne.Tests.Protocol.ProtocolHarness \
     -out:"$BUILD/protocol-harness.exe" "${FILES[@]}"
-mcs -langversion:latest -target:exe -main:JunoSecondScreen.Tests.Console.ConsoleHarness \
+mcs -langversion:latest -target:exe -main:PlusOne.Tests.Console.ConsoleHarness \
     -out:"$BUILD/console-harness.exe" "${FILES[@]}"
 
-export SECOND_SCREEN_BUILD="$BUILD"
+export PLUSONE_BUILD="$BUILD"
 
 echo
 echo "== Transport tests =="
