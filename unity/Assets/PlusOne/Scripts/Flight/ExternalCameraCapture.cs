@@ -211,6 +211,27 @@ namespace PlusOne.Flight
             {
                 camera.nearClipPlane = DefaultNearClip;
             }
+            else
+            {
+                // CONFIRMED FIX (Player.log diagnostic showed the copied far
+                // camera's clearFlags was Depth, not Skybox): in the real
+                // game, "Depth" is fine on the far camera because something
+                // else earlier in that frame's normal render pipeline already
+                // cleared the actual screen buffer being drawn to. Here, our
+                // far camera is the ONLY thing that ever touches our own
+                // dedicated RenderTexture - nothing else clears it, ever,
+                // after it's first created. With clearFlags copied as Depth,
+                // the color buffer was never cleared at all: every frame's
+                // skybox/atmosphere draw layered on top of every previous
+                // frame's, with nothing resetting it - exactly a gradual,
+                // ever-increasing brightness accumulation toward solid white,
+                // confirmed happening in every view direction and regardless
+                // of Volken. The near camera's Depth-only clear stays as-is;
+                // that part is correct by design (it's meant to layer onto
+                // the far pass, not erase it) - only the far pass, which owns
+                // clearing the color buffer for this texture, needs fixing.
+                camera.clearFlags = CameraClearFlags.Skybox;
+            }
 
             // The real camera's output normally passes through a post-process
             // stack (ImageEffectsScript -> a Beautify component: tone mapping,

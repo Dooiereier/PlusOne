@@ -24,6 +24,10 @@ namespace PlusOne
         private const int TelemetryWaitMs = 1000;
         private const float MfdIntervalSeconds = 0.25f; // 4 Hz; MFD trees are heavier than telemetry, so a slower, fixed cadence
 
+        // Shown once ever, the first time a player turns the mod on.
+        // Persisted via PlayerPrefs so it survives across game sessions.
+        private const string FirstEnablePrefKey = "PlusOne.FirstEnableMessageShown";
+
         private readonly TelemetryCollector _collector = new TelemetryCollector();
         private readonly MfdCollector _mfdCollector = new MfdCollector();
         private readonly CameraVantageCollector _cameraCollector = new CameraVantageCollector();
@@ -87,7 +91,6 @@ namespace PlusOne
         private int _orbitTabViewers;
 
         private bool _configured;
-        private bool _flightMessageShown;
 
         // See ConnectionAddress's own remarks - this cache is what turns a
         // per-frame NetworkInterface.GetAllNetworkInterfaces() call (very
@@ -212,7 +215,6 @@ namespace PlusOne
             _commands.Apply();
             PublishTelemetry();
             PublishMfd();
-            AnnounceInFlight();
             RefreshPlanetMap();
         }
 
@@ -270,6 +272,31 @@ namespace PlusOne
             {
                 StartServer(_configuration);
                 Log.Info("PlusOne turned on from the flight panel.");
+                ShowFirstEnableMessage();
+            }
+        }
+
+        // Points a first-time player at Settings -> Mods -> PlusOne, since
+        // the flight panel toggle is the only control they've necessarily
+        // seen so far - everything else (port, token, video quality, etc.)
+        // lives in the settings page instead.
+        private void ShowFirstEnableMessage()
+        {
+            if (PlayerPrefs.GetInt(FirstEnablePrefKey, 0) != 0)
+            {
+                return;
+            }
+
+            PlayerPrefs.SetInt(FirstEnablePrefKey, 1);
+            PlayerPrefs.Save();
+
+            try
+            {
+                Game.Instance.FlightScene?.FlightSceneUI?.ShowMessage("Mod settings available in Settings", false, 6f);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn($"Could not show the first-enable message: {ex.Message}");
             }
         }
 
@@ -376,7 +403,6 @@ namespace PlusOne
             _commands.Reset();
             _frame = null;
             _mfdFrame = null;
-            _flightMessageShown = false;
 
             lock (_telemetrySignal)
             {
@@ -480,39 +506,6 @@ namespace PlusOne
                 }
 
                 return _mfdFrame != null && _mfdFrame.Version != lastVersion ? _mfdFrame : null;
-            }
-        }
-
-        /// <summary>
-        /// Shows the console address in the flight scene the first time a flight starts
-        /// without a tablet attached, so the player does not have to dig through the log.
-        /// </summary>
-        private void AnnounceInFlight()
-        {
-            var flightSceneUi = Game.Instance.FlightScene?.FlightSceneUI;
-            if (flightSceneUi == null)
-            {
-                _flightMessageShown = false;
-                return;
-            }
-
-            if (_flightMessageShown || ConsoleClients > 0)
-            {
-                return;
-            }
-
-            _flightMessageShown = true;
-            List<string> info = BuildConnectionInfo();
-            if (info.Count > 0)
-            {
-                try
-                {
-                    flightSceneUi.ShowMessage(info[0], false, 8f);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warn($"Could not show the connection message: {ex.Message}");
-                }
             }
         }
 

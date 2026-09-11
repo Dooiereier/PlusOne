@@ -66,8 +66,7 @@ disabled entirely for a read-only console.
    group, and tap **Enabled**. It always starts off — you turn it on for
    each flight yourself, and it turns itself back off when you leave the
    flight scene.
-3. The address appears on screen for a few seconds after you turn it on, and
-   is always written to Juno's log:
+3. The address is always written to Juno's log:
    `PlusOne: http://192.168.1.20:8088/?t=k7prq2wf`
 4. Open that address in the device's browser. Most mobile browsers offer an
    "Add to Home Screen" option (Share menu on iOS/Safari, ⋮ menu on
