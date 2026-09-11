@@ -40,10 +40,11 @@ namespace PlusOne
         public const string LatestVersionUrl =
             "https://api.github.com/repos/Dooiereier/PlusOne/releases/latest";
 
-        // Opened when the player clicks "Download" - the repo's GitHub releases page, since
-        // that's where players actually get the mod from.
+        // Opened when the player clicks "Download" - the mod's simplerockets.com page, since
+        // that's where players actually get the mod from (GitHub is just where version checks
+        // are sourced from).
         public const string DownloadUrl =
-            "https://github.com/Dooiereier/PlusOne/releases/latest";
+            "https://www.simplerockets.com/Mods/View/352702/PlusOne";
 
         // Channel 2 (fallback): a raw version.txt at the repo root, containing just the
         // version number (e.g. "0.8"). Used automatically if channel 1 fails. Points at
