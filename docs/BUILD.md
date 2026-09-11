@@ -16,13 +16,23 @@
    `SimpleRockets2_ModTools.unitypackage`, import everything.
 3. Copy this repository's `unity/Assets/PlusOne` folder and
    `unity/Assets/ModData.asset` into the project's `Assets` folder.
-4. Unity compiles `PlusOne.dll` from the assembly definition. The
-   console errors you might see at this point are almost always a missing Mod
-   Tools import, not the mod code.
+4. Unity compiles `PlusOneMod.dll` from `unity/Assets/PlusOne/PlusOneMod.asmdef`.
+   The console errors you might see at this point are almost always a missing
+   Mod Tools import, not the mod code.
 5. Open `ModData.asset` in the inspector and check that `_assemblies` lists
-   `PlusOne.dll`. If the asset shows a missing script, delete it and
+   `PlusOneMod.dll`. If the asset shows a missing script, delete it and
    create a fresh one from the Mod Tools menu, then fill in the same fields (the
    values are listed in the file, which is plain YAML).
+
+   Mod Tools' own build step also creates (or recreates) an empty
+   `Assets/PlusOne.asmdef` - named after `ModData.asset`'s `_name` field, not
+   `PlusOneMod.asmdef` - every time you build. That's expected: it's how Mod
+   Tools' `ModBuilderWindowBase.CreateRootAssemblyDefinition` works, it's
+   gitignored, and it stays empty since nothing lives directly under
+   `Assets/`. The mod's real assembly is named `PlusOneMod` specifically so it
+   never collides with this auto-created one - don't rename it back to
+   `PlusOne`, or the build fails with "Assembly with name 'PlusOne' already
+   exists".
 6. Build with the Mod Tools menu. The package lands in `ModAssetBundles/` as
    `PlusOne.sr2-mod`.
 7. `Tools → PlusOne → Deploy Built Mod To Juno` copies it into the game's

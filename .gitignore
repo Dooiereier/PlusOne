@@ -19,3 +19,9 @@ ModAssetBundles/
 .idea/
 *.DS_Store
 tests/build/
+
+# Jundroo ModTools recreates this root-level asmdef (named after ModData's
+# _name) on every build - see docs/BUILD.md for why it must stay separate
+# from unity/Assets/PlusOne/PlusOneMod.asmdef, the mod's real assembly.
+/unity/Assets/PlusOne.asmdef
+/unity/Assets/PlusOne.asmdef.meta

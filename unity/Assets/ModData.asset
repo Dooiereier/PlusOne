@@ -13,11 +13,17 @@ MonoBehaviour:
   m_Name: ModData
   m_EditorClassIdentifier: 
   _assemblies:
-  - PlusOne.dll
+  - PlusOneMod.dll
   _author: Dooiereier
-  _description: "Turn any tablet, phone or laptop with a browser into a second
-    screen.\n\nRestart JNO after enabling this mod when also
-    using <color=green>Flight Info+!\n\n<color=red>Harmony required!"
+  _description: 'Turn any tablet, phone or laptop with a browser into a second screen.
+
+
+    Restart
+    JNO after enabling this mod when also using <color=green>Flight Info+!
+
+
+    <color=red>Harmony
+    required!'
   _loadPriority: 1000
   _name: PlusOne
   _otherAssets: []

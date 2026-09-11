@@ -1,5 +1,5 @@
 {
-	"name": "PlusOne",
+	"name": "PlusOneMod",
 	"references": [
 		"UnityEngine.UI",
 		"Unity.TextMeshPro",

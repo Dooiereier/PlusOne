@@ -31,7 +31,7 @@ mcs -langversion:latest -target:library -out:"$BUILD/UnityEngine.CoreModule.dll"
 
 echo "Type checking the mod..."
 mapfile -t SOURCES < <(find "$ROOT/unity/Assets/PlusOne/Scripts" -name '*.cs')
-mcs -langversion:latest -target:library -out:"$BUILD/PlusOne.dll" \
+mcs -langversion:latest -target:library -out:"$BUILD/PlusOneMod.dll" \
     -r:"$BUILD/UnityEngine.CoreModule.dll" \
     -r:"$BUILD/Unity.Collections.dll" \
     -r:"$ASSEMBLIES/ModApi.dll" \
